@@ -15,7 +15,7 @@ const theme = createTheme({
 function App() {
   return (
     <ThemeProvider theme={theme}>
-      <BrowserRouter>
+      <BrowserRouter basename="/ai-chat-interface">
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Chat />} />
