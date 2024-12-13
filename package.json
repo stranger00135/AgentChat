@@ -1,0 +1,8 @@
+{
+  "homepage": "https://yourusername.github.io/repo-name",
+  "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
+    // ... other scripts
+  }
+} 
