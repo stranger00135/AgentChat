@@ -4,7 +4,11 @@ export interface Agent {
   id: string
   name: string
   description: string
-  systemPrompt: string
+  prompt: string       // Initial context and behavior
+  model: string       // LLM model to use
+  maxTurns: number    // Maximum conversation turns
+  order: number       // Pipeline position
+  isActive: boolean   // Current state
 }
 
 export interface Message {
@@ -14,27 +18,30 @@ export interface Message {
   agentId?: string
   agentName?: string
   timestamp: string
-  isInterim?: boolean
-  isFinal?: boolean
-  isDiscussion?: boolean
-  parentMessageId?: string
-  iterationNumber?: number
+  parentMessageId?: string    // Link messages in a conversation
+  threadId?: string          // Group related messages in a conversation thread
+  iterationNumber?: number   // Track iteration number in the conversation
+  isInterim?: boolean       // Whether this is part of interim discussion
+  isDiscussion?: boolean    // Whether this is a discussion message
+  isFinal?: boolean        // Whether this is the final response
+  responseToAgent?: string // Track which agent this response is for
 }
 
-export interface InterimDiscussion {
+export interface ConversationThread {
   id: string
   parentMessageId: string
   messages: Message[]
   isExpanded: boolean
-  currentIteration?: number
+  agentId: string
+  currentTurn: number
 }
 
 export interface ChatState {
   messages: Message[]
   agents: Agent[]
   activeAgents: string[]
-  interimDiscussions: { [key: string]: InterimDiscussion }
-  toggleInterimDiscussion: (parentMessageId: string) => void
+  conversationThreads: { [key: string]: ConversationThread }
+  toggleThread: (threadId: string) => void
 }
 
 export interface Conversation {

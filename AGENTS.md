@@ -1,7 +1,7 @@
 # AI Agent System Documentation
 
 ## Overview
-The agent system is a sophisticated pipeline-based approach to AI interactions, where multiple specialized agents collaborate to refine and improve responses. Each agent serves a specific purpose and can interact with the main task executor multiple times to achieve optimal results.
+The agent system implements a natural, collaborative approach to AI interactions, where specialized agents engage in fluid conversations with the task executor to refine and improve responses. Each agent acts as an independent expert, freely conversing with the executor until their specific goals are met.
 
 ## Core Concepts
 
@@ -12,10 +12,10 @@ The agent system is a sophisticated pipeline-based approach to AI interactions, 
 interface Agent {
   id: string;
   name: string;
-  description: string;  // Auto-generated based on prompt
-  prompt: string;       // Defines behavior
+  description: string;  // Defines agent's expertise and role
+  prompt: string;       // Initial context and behavior
   model: string;        // LLM model used
-  steps: number;        // Interaction iterations
+  maxTurns: number;     // Maximum conversation turns
   order: number;        // Pipeline position
   isActive: boolean;    // Current state
 }
@@ -30,42 +30,49 @@ interface Agent {
 ### 2. Agent Types and Roles
 
 #### Task Executor (Main AI)
-- Primary response generator
-- Handles initial user queries
-- Incorporates agent feedback
-- Maintains conversation context
+- Primary solution generator
+- Treats each agent as a human collaborator
+- Maintains natural conversation flow
+- Adapts responses based on dialogue
+- Unaware of artificial nature of agents
 
 #### Specialized Agents
-- **Review Agents**: Analyze and critique responses
-- **Enhancement Agents**: Suggest improvements
-- **Validation Agents**: Verify accuracy/quality
-- **Style Agents**: Ensure tone and format
+Each agent is an expert focused on a specific aspect:
+- **Technical Expert**: Ensures technical accuracy and completeness
+- **UX Specialist**: Focuses on user experience and clarity
+- **Security Auditor**: Identifies security implications
+- **Performance Analyst**: Evaluates efficiency and scalability
+- **Documentation Expert**: Ensures comprehensive documentation
 
-### 3. Execution Pipeline
+### 3. Natural Conversation Pipeline
 
 #### Flow Sequence
-1. **User Input Phase**
+1. **Initial Solution Phase**
    ```
-   User Message → Task Executor → Initial Response
+   User Message → Task Executor → Initial Solution
    ```
 
-2. **Agent Review Phase**
+2. **Collaborative Refinement Phase**
    ```
    For each active agent:
-   Current Response → Agent Review → Feedback → Task Executor → Revised Response
+   {
+     Agent reviews current solution
+     While (turns < maxTurns) {
+       Agent engages in natural dialogue with Executor
+       Executor refines solution based on conversation
+     }
+   }
    ```
 
-3. **Iteration Phase**
+3. **Convergence Phase**
    ```
-   Repeat until agent.steps completed OR agent.satisfied:
-   Agent Feedback → Task Executor → New Response
+   Natural transition to next agent in pipeline
    ```
 
 #### Real-time Visibility
-- Collapsible UI sections per agent
-- Progress indicators
-- Feedback display
-- Version history
+- Expandable conversation threads
+- Natural dialogue display
+- Conversation history
 
 ### 4. Agent Management
 
@@ -73,9 +80,10 @@ interface Agent {
 ```typescript
 interface AgentCreationForm {
   name: string;         // Required
-  prompt: string;       // Required
+  description: string;  // Required, defines agent's role
+  prompt: string;       // Initial context
   model: string;        // Default: gpt-3.5-turbo
-  steps: number;        // Default: 1
+  maxTurns: number;     // Default: 5
   order: number;        // Auto-assigned
 }
 ```
@@ -102,98 +110,73 @@ interface AgentShareConfig {
 }
 ```
 
-#### Sharing Process
-1. Generate share code
-2. Upload to MongoDB
-3. Share code distribution
-4. Import via code
-
 ## Implementation Guidelines
 
 ### 1. Agent Creation
 ```typescript
 // Example agent creation
 const agent = {
-  name: "Style Checker",
-  prompt: "Review the response for tone and professionalism...",
-  model: "gpt-3.5-turbo",
-  steps: 2,
+  name: "Security Expert",
+  description: "Reviews code for security best practices and potential vulnerabilities",
+  prompt: "You are a senior security engineer reviewing code...",
+  model: "gpt-4",
+  maxTurns: 5,
   order: 1
 };
 ```
 
-### 2. Pipeline Integration
+### 2. Conversation Flow
 ```typescript
-// Pipeline execution pseudo-code
-async function executePipeline(userMessage: string) {
-  let response = await taskExecutor.generateResponse(userMessage);
+// Natural conversation flow pseudo-code
+async function executeConversation(userMessage: string) {
+  let solution = await taskExecutor.generateSolution(userMessage);
   
   for (const agent of activeAgents) {
-    let iterations = 0;
-    while (iterations < agent.steps) {
-      const feedback = await agent.review(response);
-      if (feedback.satisfied) break;
-      response = await taskExecutor.revise(response, feedback);
-      iterations++;
+    let conversationTurns = 0;
+    
+    while (conversationTurns < agent.maxTurns) {
+      const agentResponse = await agent.engage(solution);
+      solution = await taskExecutor.respondTo(agentResponse.message);
+      conversationTurns++;
     }
   }
   
-  return response;
-}
-```
-
-### 3. UI Components
-```typescript
-interface AgentUIComponents {
-  AgentList: Component;        // List all agents
-  AgentCreator: Component;     // Creation form
-  AgentManager: Component;     // Drag-drop interface
-  FeedbackDisplay: Component;  // Show agent feedback
+  return solution;
 }
 ```
 
 ## Best Practices
 
 ### 1. Agent Design
-- Keep prompts focused and specific
-- Use clear success criteria
-- Include example inputs/outputs
-- Define iteration limits
+- Define clear, focused expertise areas
+- Write prompts that encourage natural dialogue
+- Allow flexibility in conversation flow
+- Support collaborative problem-solving
 
-### 2. Pipeline Optimization
-- Order agents by dependency
-- Minimize unnecessary iterations
-- Cache intermediate results
-- Handle timeouts gracefully
+### 2. Conversation Optimization
+- Enable natural back-and-forth dialogue
+- Avoid rigid frameworks or templates
+- Allow organic problem-solving
+- Support collaborative discovery
 
 ### 3. Error Handling
-- Validate agent configurations
-- Handle API failures
-- Provide fallback responses
-- Log pipeline errors
+- Handle conversation deadlocks
+- Provide graceful exits
+- Monitor conversation quality
+- Detect circular discussions
 
-## Security Considerations
+## Performance Considerations
 
-### 1. Data Privacy
-- No sensitive data in prompts
-- Sanitize user inputs
-- Encrypt shared configurations
+### 1. Conversation Efficiency
+- Balance depth vs. brevity
+- Avoid repetitive dialogues
+- Recognize diminishing returns
+- Smart turn limiting
 
-### 2. Access Control
-- Validate share codes
-- Rate limit sharing
-- Monitor usage patterns
+### 2. Resource Management
+- Optimize token usage
+- Cache intermediate solutions
+- Monitor conversation costs
+- Clean up completed dialogues
 
-## Performance Optimization
-
-### 1. Response Time
-- Parallel processing where possible
-- Efficient agent ordering
-- Caching strategies
-
-### 2. Resource Usage
-- Minimize API calls
-- Optimize local storage
-- Clean up unused agents
-
-Note: This documentation should be updated as the agent system evolves. All changes should be reflected in both the code and this documentation. 
+Note: This documentation reflects our natural conversation flow between agents and the executor. The system emphasizes organic collaboration and expertise-driven interactions rather than structured feedback frameworks. 

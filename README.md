@@ -1,144 +1,116 @@
-# AI Chat Collaboration Platform
+# AI Chat Collaboration
 
-A sophisticated AI chat platform that enables collaborative interactions with multiple AI agents, featuring real-time streaming responses and a unique agent-based feedback system.
+A sophisticated AI chat platform featuring multi-agent interactions and real-time streaming. The platform enables natural conversations between a task executor and multiple expert agents to refine and improve solutions.
 
-## 🌟 Features
+## Features
 
-### Implemented Features
+### Core Features
+- Real-time message streaming with proper sequencing
+- Multi-agent collaboration system
+- Natural conversation flow between agents and executor
+- Collapsible interim discussions
+- Custom agent creation and configuration
+- OpenAI API integration
 
-#### Chat System
-- ✅ Standard chat interface with real-time streaming responses
-- ✅ OpenAI API integration with user-provided API key
-- ✅ Local storage for chat history persistence
-- ✅ Real-time streaming responses with typing indicators
-- ✅ Clean and intuitive user interface
+### Agent System
+- Pre-configured expert agents (Technical, UX, Security)
+- Custom agent creation with configurable parameters
+- Natural dialogue-based interaction
+- Configurable conversation turns
+- Real-time agent feedback and executor responses
 
-#### Agent System
-- ✅ Multi-agent conversation pipeline
-- ✅ Agent feedback and response refinement
-- ✅ Real-time agent interaction visibility
-- ✅ Local storage for agent configurations
-- ✅ Agent activation/deactivation toggles
+### User Interface
+- Clean, modern design
+- Collapsible conversation threads
+- Clear message labeling and organization
+- Real-time updates
+- Responsive layout
 
-### Planned Features
+## Getting Started
 
-#### Chat Sharing & Collaboration
-- 🚧 Shareable chat histories with unique IDs
-- 🚧 Chat forking capabilities
-- 🚧 MongoDB integration for shared content
-- 🚧 Real-time collaborative features
+### Prerequisites
+- Node.js >= 18.17.0
+- npm >= 9.0.0
+- OpenAI API key
 
-#### Agent System Enhancements
-- 🚧 Drag-and-drop agent reordering
-- 🚧 Agent sharing functionality
-- 🚧 Enhanced agent configuration UI
-- 🚧 Agent template library
-
-#### Backend Integration
-- 🚧 FastAPI backend implementation
-- 🚧 Claude AI integration
-- 🚧 Enhanced data persistence
-
-## 🛠 Tech Stack
-
-### Current Implementation
-- **Frontend**: Next.js 13+ (App Router)
-- **State Management**: Zustand
-- **Styling**: Tailwind CSS
-- **API Integration**: OpenAI API
-
-### Planned Stack Additions
-- **Backend**: FastAPI (Python)
-- **Database**: MongoDB with Motor
-- **Additional AI**: Claude API integration
-- **Deployment**: Vercel
-
-## 🏗 Project Structure
-
-```
-ai-chat-collab/
-├── app/
-│   ├── api/              # API route handlers
-│   ├── components/       # React components
-│   │   ├── Chat/        # Chat-related components
-│   │   └── Settings/    # Settings components
-│   ├── hooks/           # Custom React hooks
-│   ├── store/           # Zustand store configurations
-│   ├── types/           # TypeScript type definitions
-│   └── utils/           # Utility functions
-├── public/              # Static assets
-└── [Configuration files]
-```
-
-## 🚀 Getting Started
-
+### Installation
 1. Clone the repository
 ```bash
-git clone [repository-url]
+git clone https://github.com/yourusername/ai-chat-collab.git
+cd ai-chat-collab
 ```
 
 2. Install dependencies
 ```bash
-cd ai-chat-collab
 npm install
 ```
 
-3. Create a `.env.local` file with your environment variables:
-```env
-NEXT_PUBLIC_DEFAULT_MODEL=gpt-3.5-turbo
-```
-
-4. Start the development server
+3. Start the development server
 ```bash
 npm run dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## 💻 Usage
+### Configuration
+1. Enter your OpenAI API key in the application
+2. Configure agents as needed
+3. Start chatting!
 
-1. Enter your OpenAI API key in the settings
-2. Start chatting with the AI
-3. Configure and activate agents to enhance responses
-4. Agents will provide feedback and help refine the AI's responses
+## Usage
 
-## 🔒 Security
+### Basic Chat
+1. Enter your message in the chat input
+2. The executor will provide an initial response
+3. Active agents will review and provide feedback
+4. The executor will refine the response based on feedback
+5. A final response will be provided
 
-- API keys are stored securely in browser cookies
-- No sensitive data is transmitted to our servers
-- All chat history is stored locally by default
+### Agent Management
+1. Toggle agents using the agent buttons
+2. Create custom agents with specific expertise
+3. Configure agent parameters:
+   - Name and description
+   - Conversation prompt
+   - Model selection
+   - Maximum conversation turns
 
-## 🤝 Contributing
+### Conversation Flow
+1. User message
+2. Initial executor response
+3. Agent feedback and executor refinement (in collapsible section)
+4. Final refined response
 
-We welcome contributions! Please see our contributing guidelines for more details.
+## Development
 
-## 📝 License
+### Project Structure
+```
+ai-chat-collab/
+├── app/
+│   ├── api/         # API routes
+│   ├── components/  # React components
+│   ├── store/       # State management
+│   ├── types/       # TypeScript types
+│   └── hooks/       # Custom hooks
+├── public/          # Static files
+└── docs/           # Documentation
+```
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+### Key Technologies
+- Next.js 13+ (App Router)
+- React 19.0.0
+- TypeScript 5.x
+- Tailwind CSS 3.4.1
+- Zustand 5.0.2
+- OpenAI API SDK 4.77.0
 
-## 🔮 Future Plans
+## Contributing
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-1. **Phase 1**: Chat Sharing System
-   - Implement MongoDB integration
-   - Add share code generation
-   - Enable chat forking
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-2. **Phase 2**: Enhanced Agent System
-   - Add drag-and-drop reordering
-   - Implement agent sharing
-   - Create agent template library
-
-3. **Phase 3**: Backend Integration
-   - Set up FastAPI backend
-   - Integrate Claude AI
-   - Implement advanced data persistence
-
-## ⚠️ Known Issues
-
-- Large chat histories may impact local storage limits
-- Some browser variations in streaming response display
-- API key needs to be re-entered after browser cache clear
-
-## 📞 Support
-
-For support, please open an issue in the GitHub repository. 
+## Acknowledgments
+- OpenAI for their powerful API
+- The Next.js team for the excellent framework
+- All contributors and users of this project 

@@ -10,19 +10,38 @@ export const AgentList = () => {
   const [newAgent, setNewAgent] = useState<Partial<Agent>>({
     name: '',
     description: '',
-    systemPrompt: ''
+    prompt: '',
+    model: 'gpt-4',
+    maxTurns: 1
   })
 
   const handleAddAgent = () => {
-    if (!newAgent.name || !newAgent.systemPrompt) return
+    if (!newAgent.name || !newAgent.prompt) return
 
     addAgent(
       newAgent.name,
       newAgent.description || `Custom agent: ${newAgent.name}`,
-      newAgent.systemPrompt
+      newAgent.prompt,
+      newAgent.model,
+      Math.max(1, Math.min(10, Number(newAgent.maxTurns) || 1))
     )
-    setNewAgent({ name: '', description: '', systemPrompt: '' })
+    setNewAgent({ name: '', description: '', prompt: '', model: 'gpt-4', maxTurns: 1 })
     setIsModalOpen(false)
+  }
+
+  const handleMaxTurnsChange = (value: string) => {
+    const numValue = parseInt(value)
+    if (!isNaN(numValue)) {
+      setNewAgent(prev => ({
+        ...prev,
+        maxTurns: Math.max(1, Math.min(10, numValue))
+      }))
+    } else {
+      setNewAgent(prev => ({
+        ...prev,
+        maxTurns: 1
+      }))
+    }
   }
 
   return (
@@ -41,11 +60,12 @@ export const AgentList = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }
               `}
+              title={`${agent.name}\n${agent.description}`}
             >
               {agent.name}
             </button>
             {/* Show delete button for custom agents */}
-            {!['researcher', 'coder', 'critic'].includes(agent.id) && (
+            {!['technical-expert', 'ux-specialist', 'security-expert'].includes(agent.id) && (
               <button
                 onClick={() => removeAgent(agent.id)}
                 className="absolute -top-1 -right-1 hidden group-hover:flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-xs"
@@ -56,7 +76,7 @@ export const AgentList = () => {
             )}
           </div>
         ))}
-        
+
         {/* Add Agent Button */}
         <button
           onClick={() => setIsModalOpen(true)}
@@ -84,31 +104,59 @@ export const AgentList = () => {
                   value={newAgent.name}
                   onChange={(e) => setNewAgent(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full px-3 py-2 border rounded-md"
-                  placeholder="e.g., UX Expert"
+                  placeholder="e.g., Performance Expert"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description (optional)
+                  Description
                 </label>
                 <input
                   type="text"
                   value={newAgent.description}
                   onChange={(e) => setNewAgent(prev => ({ ...prev, description: e.target.value }))}
                   className="w-full px-3 py-2 border rounded-md"
-                  placeholder="e.g., Specializes in user experience and interface design"
+                  placeholder="e.g., Specializes in performance optimization"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  System Prompt
+                  Prompt
                 </label>
                 <textarea
-                  value={newAgent.systemPrompt}
-                  onChange={(e) => setNewAgent(prev => ({ ...prev, systemPrompt: e.target.value }))}
+                  value={newAgent.prompt}
+                  onChange={(e) => setNewAgent(prev => ({ ...prev, prompt: e.target.value }))}
                   className="w-full px-3 py-2 border rounded-md h-32"
-                  placeholder="Define the agent's role and behavior..."
+                  placeholder="Define how the agent should engage in conversation..."
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Model
+                  </label>
+                  <select
+                    value={newAgent.model}
+                    onChange={(e) => setNewAgent(prev => ({ ...prev, model: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-md"
+                  >
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Max Turns
+                  </label>
+                  <input
+                    type="number"
+                    value={newAgent.maxTurns}
+                    onChange={(e) => handleMaxTurnsChange(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md"
+                    min="1"
+                    max="10"
+                  />
+                </div>
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">
@@ -120,7 +168,7 @@ export const AgentList = () => {
               </button>
               <button
                 onClick={handleAddAgent}
-                disabled={!newAgent.name || !newAgent.systemPrompt}
+                disabled={!newAgent.name || !newAgent.prompt}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Add Agent

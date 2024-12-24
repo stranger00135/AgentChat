@@ -1,43 +1,61 @@
 'use client'
 
 import { create } from 'zustand'
-import { Message, Agent, ChatState, InterimDiscussion } from '../types/chat'
+import { Message, Agent, ChatState, ConversationThread } from '../types/chat'
 import { v4 as uuidv4 } from 'uuid'
 
 interface ChatStore extends ChatState {
   isLoading: boolean
   addMessage: (content: string, role: Role, options?: {
     agentId?: string,
-    isInterim?: boolean,
+    threadId?: string,
     parentMessageId?: string,
-    id?: string
+    iterationNumber?: number,
+    isInterim?: boolean,
+    isDiscussion?: boolean,
+    isFinal?: boolean,
+    responseToAgent?: boolean,
+    id?: string,
+    agentName?: string
   }) => void
-  addAgent: (name: string, description: string, systemPrompt: string) => void
+  addAgent: (name: string, description: string, prompt: string, model?: string, maxTurns?: number) => void
   removeAgent: (agentId: string) => void
   toggleAgent: (agentId: string) => void
   clearMessages: () => void
-  toggleInterimDiscussion: (parentMessageId: string) => void
+  toggleThread: (threadId: string) => void
 }
 
-// Predefined agents
+// Predefined agents with natural conversation prompts
 const defaultAgents: Agent[] = [
   {
-    id: 'researcher',
-    name: 'Research Assistant',
-    description: 'Helps with research, fact-checking, and analysis',
-    systemPrompt: 'You are a research assistant. Help the task executor find accurate information and analyze data. Focus on providing well-researched, factual responses.'
+    id: 'technical-expert',
+    name: 'Technical Expert',
+    description: 'Ensures technical accuracy and implementation details',
+    prompt: 'You are a senior technical expert reviewing solutions. Engage in natural conversation with the executor to ensure technical accuracy and proper implementation. Focus on correctness, efficiency, and best practices.',
+    model: 'gpt-4',
+    maxTurns: 1,
+    order: 1,
+    isActive: false
   },
   {
-    id: 'coder',
-    name: 'Code Expert',
-    description: 'Assists with coding, debugging, and technical implementation',
-    systemPrompt: 'You are a coding expert. Help the task executor with programming tasks, debugging, and implementing solutions. Focus on providing clean, efficient code and clear explanations.'
+    id: 'ux-specialist',
+    name: 'UX Specialist',
+    description: 'Focuses on user experience and interface design',
+    prompt: 'You are a UX/UI specialist. Have a natural conversation with the executor about user experience, interface design, and accessibility. Suggest improvements that enhance usability and user satisfaction.',
+    model: 'gpt-4',
+    maxTurns: 1,
+    order: 2,
+    isActive: false
   },
   {
-    id: 'critic',
-    name: 'Critical Thinker',
-    description: 'Provides alternative viewpoints and critical analysis',
-    systemPrompt: 'You are a critical thinker. Help the task executor by challenging assumptions, providing alternative viewpoints, and analyzing problems from different angles. Focus on constructive criticism and logical analysis.'
+    id: 'security-expert',
+    name: 'Security Expert',
+    description: 'Reviews security implications and best practices',
+    prompt: 'You are a security expert. Engage with the executor to discuss security implications, identify potential vulnerabilities, and suggest security best practices. Focus on making the solution secure by design.',
+    model: 'gpt-4',
+    maxTurns: 1,
+    order: 3,
+    isActive: false
   }
 ]
 
@@ -45,49 +63,69 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   messages: [],
   agents: defaultAgents,
   activeAgents: [],
-  interimDiscussions: {},
+  conversationThreads: {},
   isLoading: false,
 
   addMessage: (content, role, options = {}) => {
-    const { agentId, isInterim, parentMessageId, id } = options
+    const { 
+      agentId, 
+      threadId, 
+      parentMessageId, 
+      iterationNumber,
+      isInterim,
+      isDiscussion,
+      isFinal,
+      responseToAgent,
+      id,
+      agentName: providedAgentName
+    } = options
+
     const message: Message = {
       id: id || uuidv4(),
       content,
       role,
       timestamp: new Date().toISOString(),
+      threadId,
+      parentMessageId,
+      iterationNumber,
       isInterim,
-      parentMessageId
+      isDiscussion,
+      isFinal,
+      responseToAgent
     }
 
     if (agentId) {
-      const agent = defaultAgents.find(a => a.id === agentId)
+      const agent = [...defaultAgents, ...get().agents].find(a => a.id === agentId)
       if (agent) {
         message.agentId = agentId
-        message.agentName = agent.name
+        message.agentName = providedAgentName || agent.name
       }
     }
 
-    // Always add message to the main messages array
+    // Add message to main messages array
     set(state => ({
       messages: [...state.messages, message]
     }))
 
-    // If it's an interim message, also add it to the interim discussions
-    if (isInterim && parentMessageId) {
+    // If part of a thread, update the conversation thread
+    if (parentMessageId) {
       set(state => {
-        const currentDiscussion = state.interimDiscussions[parentMessageId] || {
-          id: uuidv4(),
+        const threadId = message.threadId || parentMessageId
+        const currentThread = state.conversationThreads[threadId] || {
+          id: threadId,
           parentMessageId,
           messages: [],
-          isExpanded: true // Start expanded by default
+          isExpanded: true, // Start expanded to show real-time messages
+          agentId: agentId || '',
+          currentTurn: 1
         }
 
         return {
-          interimDiscussions: {
-            ...state.interimDiscussions,
-            [parentMessageId]: {
-              ...currentDiscussion,
-              messages: [...currentDiscussion.messages, message]
+          conversationThreads: {
+            ...state.conversationThreads,
+            [threadId]: {
+              ...currentThread,
+              messages: [...currentThread.messages, message]
             }
           }
         }
@@ -95,12 +133,16 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }
   },
 
-  addAgent: (name: string, description: string, systemPrompt: string) => {
+  addAgent: (name, description, prompt, model = 'gpt-4', maxTurns = 5) => {
     const newAgent: Agent = {
       id: name.toLowerCase().replace(/\s+/g, '-'),
       name,
       description,
-      systemPrompt
+      prompt,
+      model,
+      maxTurns,
+      order: get().agents.length + 1,
+      isActive: false
     }
 
     set(state => ({
@@ -111,7 +153,6 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   removeAgent: (agentId: string) => {
     set(state => ({
       agents: state.agents.filter(a => a.id !== agentId),
-      // Also remove from active agents if it was active
       activeAgents: state.activeAgents.filter(id => id !== agentId)
     }))
   },
@@ -124,19 +165,19 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }))
   },
 
-  toggleInterimDiscussion: (parentMessageId: string) => {
+  toggleThread: (threadId: string) => {
     set(state => ({
-      interimDiscussions: {
-        ...state.interimDiscussions,
-        [parentMessageId]: {
-          ...state.interimDiscussions[parentMessageId],
-          isExpanded: !state.interimDiscussions[parentMessageId]?.isExpanded
+      conversationThreads: {
+        ...state.conversationThreads,
+        [threadId]: {
+          ...state.conversationThreads[threadId],
+          isExpanded: !state.conversationThreads[threadId]?.isExpanded
         }
       }
     }))
   },
 
   clearMessages: () => {
-    set({ messages: [], interimDiscussions: {} })
+    set({ messages: [], conversationThreads: {} })
   }
 })) 
