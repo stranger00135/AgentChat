@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AgentChat
+
+A sophisticated AI chat platform featuring multi-agent interactions and real-time streaming. The platform enables natural conversations between a task executor and multiple expert agents to refine and improve solutions.
+
+## Features
+
+- Real-time message streaming with proper sequencing
+- Multi-agent collaboration system
+- Natural conversation flow between agents and executor
+- Collapsible interim discussions
+- Custom agent creation and configuration
+- OpenAI API integration
+
+### Pre-configured Agents
+- Technical Expert: Ensures technical accuracy and implementation details
+- UX Specialist: Focuses on user experience and interface design
+- Security Expert: Reviews security implications and best practices
+
+## Project Structure
+
+```
+AgentChat/
+├── app/                 # Main application code
+│   ├── api/            # API routes
+│   ├── components/     # React components
+│   ├── store/          # State management
+│   ├── types/          # TypeScript types
+│   ├── utils/          # Utility functions
+│   ├── hooks/          # Custom React hooks
+│   └── page.tsx        # Main page component
+├── public/             # Static files
+├── Docs/              # Documentation
+└── node_modules/      # Dependencies
+```
+
+## Prerequisites
+
+- Node.js >= 18.17.0
+- npm >= 9.0.0
+- OpenAI API key
+- MongoDB (for conversation storage)
 
 ## Getting Started
 
-First, run the development server:
-
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/yourusername/AgentChat.git
+cd AgentChat
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Create a `.env.local` file with your configuration:
+```
+MONGODB_URI=your_mongodb_uri
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Start the development server:
+```bash
+npm run dev
+```
 
-## Learn More
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-To learn more about Next.js, take a look at the following resources:
+## Usage
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Enter your OpenAI API key in the application
+2. Configure agents as needed
+3. Start chatting!
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The application will:
+- Process your message through the executor
+- Get feedback from active agents
+- Show interim discussions in collapsible sections
+- Provide a final refined response
+
+## Development
+
+This project uses:
+- Next.js 13+ (App Router)
+- React 19.0.0
+- TypeScript 5.x
+- Tailwind CSS 3.4.1
+- Zustand 5.0.2
+- OpenAI API SDK 4.77.0
 
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Check out the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

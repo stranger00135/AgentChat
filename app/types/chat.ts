@@ -25,6 +25,7 @@ export interface Message {
   isDiscussion?: boolean    // Whether this is a discussion message
   isFinal?: boolean        // Whether this is the final response
   responseToAgent?: string // Track which agent this response is for
+  isError?: boolean       // Whether this message represents an error
 }
 
 export interface ConversationThread {

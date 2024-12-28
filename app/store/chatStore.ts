@@ -1,7 +1,7 @@
 'use client'
 
 import { create } from 'zustand'
-import { Message, Agent, ChatState, ConversationThread } from '../types/chat'
+import { Message, Agent, ChatState, Role } from '../types/chat'
 import { v4 as uuidv4 } from 'uuid'
 
 interface ChatStore extends ChatState {
@@ -14,9 +14,10 @@ interface ChatStore extends ChatState {
     isInterim?: boolean,
     isDiscussion?: boolean,
     isFinal?: boolean,
-    responseToAgent?: boolean,
+    responseToAgent?: string,
     id?: string,
-    agentName?: string
+    agentName?: string,
+    isError?: boolean
   }) => void
   addAgent: (name: string, description: string, prompt: string, model?: string, maxTurns?: number) => void
   removeAgent: (agentId: string) => void

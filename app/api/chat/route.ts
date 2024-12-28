@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { Agent, Message } from '@/app/types/chat'
+import { Agent } from '@/app/types/chat'
 import { v4 as uuidv4 } from 'uuid'
 
 export async function POST(request: Request) {
@@ -24,12 +24,27 @@ export async function POST(request: Request) {
     const openai = new OpenAI({ apiKey })
     const encoder = new TextEncoder()
     const stream = new TransformStream()
-    const writer = stream.writable.getWriter()
+    const streamWriter = stream.writable.getWriter()
 
     // Helper function to send a message through the stream
-    const sendMessage = async (message: any) => {
+    const sendMessage = async (message: {
+      content: string;
+      role: string;
+      id?: string;
+      timestamp?: string;
+      agentId?: string;
+      agentName?: string;
+      threadId?: string;
+      parentMessageId?: string;
+      iterationNumber?: number;
+      isInterim?: boolean;
+      isDiscussion?: boolean;
+      isFinal?: boolean;
+      responseToAgent?: string;
+      isError?: boolean;
+    }) => {
       const data = JSON.stringify({ type: 'message', data: message }) + '\n'
-      await writer.write(encoder.encode(data))
+      await streamWriter.write(encoder.encode(data))
     }
 
     // Process messages in background
@@ -39,9 +54,8 @@ export async function POST(request: Request) {
       chatHistory,
       activeAgents,
       agents,
-      sendMessage,
-      writer
-    }).finally(() => writer.close())
+      sendMessage
+    }).finally(() => streamWriter.close())
 
     return new Response(stream.readable, {
       headers: {
@@ -67,16 +81,44 @@ async function processMessages(
     chatHistory,
     activeAgents,
     agents,
-    sendMessage,
-    writer
+    sendMessage
   }: {
     message: string
     messageId: string
-    chatHistory: any[]
+    chatHistory: {
+      content: string;
+      role: string;
+      id?: string;
+      timestamp?: string;
+      agentId?: string;
+      agentName?: string;
+      threadId?: string;
+      parentMessageId?: string;
+      iterationNumber?: number;
+      isInterim?: boolean;
+      isDiscussion?: boolean;
+      isFinal?: boolean;
+      responseToAgent?: string;
+      isError?: boolean;
+    }[]
     activeAgents: string[]
     agents: Agent[]
-    sendMessage: (message: any) => Promise<void>
-    writer: WritableStreamDefaultWriter<Uint8Array>
+    sendMessage: (message: {
+      content: string;
+      role: string;
+      id?: string;
+      timestamp?: string;
+      agentId?: string;
+      agentName?: string;
+      threadId?: string;
+      parentMessageId?: string;
+      iterationNumber?: number;
+      isInterim?: boolean;
+      isDiscussion?: boolean;
+      isFinal?: boolean;
+      responseToAgent?: string;
+      isError?: boolean;
+    }) => Promise<void>
   }
 ) {
   try {

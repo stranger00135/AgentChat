@@ -43,17 +43,17 @@ export const ChatMessage: FC<ChatMessageProps> = memo(({ message }) => {
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw, rehypeSanitize]}
                 components={{
-                  pre: ({ node, ...props }) => (
+                  pre: ({ ...props }) => (
                     <div className="relative my-2">
                       <pre {...props} className="overflow-auto rounded-md bg-gray-100 p-4 text-sm dark:bg-gray-800 dark:text-gray-200" />
                     </div>
                   ),
-                  code: ({ node, inline, ...props }) => (
+                  code: ({ inline, ...props }) => (
                     inline 
                       ? <code {...props} className="rounded bg-gray-200 px-1 py-0.5 text-sm font-mono text-gray-800" />
                       : <code {...props} />
                   ),
-                  p: ({ node, ...props }) => (
+                  p: ({ ...props }) => (
                     <p {...props} className="mb-2 last:mb-0" />
                   )
                 }}
