@@ -16,9 +16,18 @@ export const ApiKeyInput = () => {
   }, [apiKey])
 
   const handleSave = () => {
-    if (inputValue.trim()) {
-      updateApiKey(inputValue.trim())
+    const trimmedValue = inputValue.trim()
+    if (trimmedValue) {
+      updateApiKey(trimmedValue)
+      // Force immediate UI update
       setIsEditing(false)
+      setInputValue(trimmedValue)
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && inputValue.trim()) {
+      handleSave()
     }
   }
 
@@ -58,6 +67,7 @@ export const ApiKeyInput = () => {
         type="password"
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
+        onKeyPress={handleKeyPress}
         placeholder="Enter OpenAI API Key"
         className="flex-1 rounded-lg border p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />

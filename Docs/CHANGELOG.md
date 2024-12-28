@@ -2,11 +2,20 @@
 
 ## [0.3.0] - 2024-12-28
 
+### Added
+- Vercel deployment support
+- Immediate chat activation after API key entry
+
 ### Changed
 - Updated project folder structure to have the main app under the root folder
 - Renamed project to "AgentChat"
 - Improved project organization and file structure
 - Updated documentation to reflect new structure
+- Fixed API key state management for better user experience
+
+### Fixed
+- Chat box now becomes usable immediately after entering API key
+- API key persistence between page refreshes
 
 ## [0.2.0] - 2024-12-25
 
