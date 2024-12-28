@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChatInput } from './ChatInput'
 import { MessageList } from './MessageList'
 import { AgentList } from './AgentList'
@@ -26,8 +26,6 @@ export const ChatInterface = () => {
 
     setIsLoading(true)
     setError(null)
-    console.log('Active agents:', activeAgents)
-    console.log('Available agents:', agents)
 
     try {
       const response = await fetch('/api/chat', {
@@ -37,7 +35,7 @@ export const ChatInterface = () => {
         },
         body: JSON.stringify({ 
           message: content,
-          messageId: userMessageId, // Pass the user message ID to maintain parent reference
+          messageId: userMessageId,
           apiKey,
           activeAgents,
           agents,
@@ -47,8 +45,7 @@ export const ChatInterface = () => {
 
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('API error response:', errorData)
-        throw new Error(errorData.error || `API error: ${response.status}`)
+        throw new Error(errorData.error || 'Failed to send message')
       }
 
       const reader = response.body?.getReader()
@@ -69,7 +66,6 @@ export const ChatInterface = () => {
           try {
             const message = JSON.parse(messageStr)
             if (message.type === 'message') {
-              console.log('Received message:', message.data)
               const msg = message.data
               
               if (msg.role === 'agent') {
@@ -118,19 +114,29 @@ export const ChatInterface = () => {
       <div className="p-4 border-b bg-white">
         <h1 className="text-2xl font-bold mb-2">AI Chat</h1>
         <ApiKeyInput />
-        {error && (
-          <div className="mt-2 text-sm text-red-500">
-            Error: {error}
-          </div>
-        )}
       </div>
-      <AgentList />
-      <MessageList />
-      <ChatInput 
-        onSendMessage={handleSendMessage} 
-        disabled={isLoading || !apiKey} 
-        placeholder={apiKey ? "Type a message..." : "Please enter your OpenAI API key first"}
-      />
+      <div className="flex-1 overflow-hidden">
+        <div className="h-full flex">
+          <div className="w-64 p-4 border-r bg-gray-50">
+            <AgentList />
+          </div>
+          <div className="flex-1 flex flex-col">
+            <div className="flex-1 overflow-y-auto p-4">
+              <MessageList />
+            </div>
+            <div className="p-4 border-t bg-white">
+              <ChatInput 
+                onSendMessage={handleSendMessage} 
+                disabled={isLoading || !apiKey} 
+                placeholder={apiKey ? "Type a message..." : "Please enter your OpenAI API key first"}
+              />
+              {error && (
+                <div className="text-red-500 text-sm mt-2">{error}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 } 

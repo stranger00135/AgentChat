@@ -5,23 +5,14 @@ import { useApiKey } from '@/app/hooks/useApiKey'
 
 export const ApiKeyInput = () => {
   const { apiKey, updateApiKey } = useApiKey()
-  const [inputValue, setInputValue] = useState('')
+  const [inputValue, setInputValue] = useState(apiKey)
   const [isEditing, setIsEditing] = useState(!apiKey)
-
-  useEffect(() => {
-    if (apiKey) {
-      setInputValue(apiKey)
-      setIsEditing(false)
-    }
-  }, [apiKey])
 
   const handleSave = () => {
     const trimmedValue = inputValue.trim()
     if (trimmedValue) {
       updateApiKey(trimmedValue)
-      // Force immediate UI update
       setIsEditing(false)
-      setInputValue(trimmedValue)
     }
   }
 

@@ -1,19 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Cookies from 'js-cookie'
 
 const API_KEY_COOKIE = 'openai_api_key'
 
 export const useApiKey = () => {
-  const [apiKey, setApiKey] = useState<string>(() => Cookies.get(API_KEY_COOKIE) || '')
-
-  useEffect(() => {
+  // Initialize with cookie value immediately
+  const [apiKey, setApiKey] = useState<string>(() => {
     const savedKey = Cookies.get(API_KEY_COOKIE)
-    if (savedKey && !apiKey) {
-      setApiKey(savedKey)
-    }
-  }, [apiKey])
+    return savedKey || ''
+  })
 
   const updateApiKey = (key: string) => {
     const trimmedKey = key.trim()

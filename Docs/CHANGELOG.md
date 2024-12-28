@@ -12,10 +12,13 @@
 - Improved project organization and file structure
 - Updated documentation to reflect new structure
 - Fixed API key state management for better user experience
+- Simplified state management and removed unnecessary effects
 
 ### Fixed
 - Chat box now becomes usable immediately after entering API key
 - API key persistence between page refreshes
+- Message port closed error in browser console
+- Chat input placeholder not updating after API key entry
 
 ## [0.2.0] - 2024-12-25
 
