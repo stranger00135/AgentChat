@@ -1,0 +1,237 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "name": "Documentation Updates",
+      "description": "Ensure documentation is always updated with code changes",
+      "patterns": [
+        {
+          "files": ["**/*.{ts,tsx,js,jsx}"],
+          "requireUpdates": ["README.md", "CHANGELOG.md"],
+          "message": "Please update README.md and CHANGELOG.md to reflect your changes"
+        }
+      ]
+    },
+    {
+      "name": "Code Documentation",
+      "description": "Enforce proper code documentation standards",
+      "patterns": [
+        {
+          "files": ["**/*.{ts,tsx}"],
+          "require": {
+            "fileHeader": true,
+            "functionDocs": true,
+            "interfaceDocs": true,
+            "componentDocs": true
+          },
+          "patterns": [
+            {
+              "pattern": "^\\s*\\/\\*\\*[\\s\\S]*?\\*\\/\\s*export",
+              "message": "Export declarations must have JSDoc comments"
+            },
+            {
+              "pattern": "^\\s*\\/\\*\\*[\\s\\S]*?\\*\\/\\s*function",
+              "message": "Functions must have JSDoc comments"
+            },
+            {
+              "pattern": "^\\s*\\/\\*\\*[\\s\\S]*?\\*\\/\\s*interface",
+              "message": "Interfaces must have JSDoc comments"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Code Quality",
+      "description": "Enforce code quality standards",
+      "patterns": [
+        {
+          "files": ["**/*.{ts,tsx,js,jsx}"],
+          "maxLength": 80,
+          "requirePatterns": [
+            {
+              "pattern": "^\\s*import\\s+.*\\s+from\\s+.*$",
+              "message": "Use explicit imports instead of require"
+            },
+            {
+              "pattern": "^\\s*const\\s+.*\\s+=\\s+.*$",
+              "message": "Use const for variables that won't be reassigned"
+            }
+          ],
+          "forbidPatterns": [
+            {
+              "pattern": "console\\.log",
+              "message": "Remove console.log statements before committing"
+            },
+            {
+              "pattern": "any(?!\\s*\\{)",
+              "message": "Avoid using 'any' type in TypeScript"
+            },
+            {
+              "pattern": "\\/\\/\\s*TODO",
+              "message": "Convert TODOs to GitHub issues"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Component Structure",
+      "description": "Enforce React component best practices",
+      "patterns": [
+        {
+          "files": ["**/*.{tsx}"],
+          "requirePatterns": [
+            {
+              "pattern": "^\\s*import\\s+.*\\s+from\\s+'react'",
+              "message": "React components must have React import"
+            },
+            {
+              "pattern": "^\\s*interface\\s+.*Props\\s*\\{",
+              "message": "Components must have Props interface"
+            }
+          ],
+          "forbidPatterns": [
+            {
+              "pattern": "useState\\(([^:)])",
+              "message": "useState hooks should specify type"
+            },
+            {
+              "pattern": "useEffect\\([^,]+\\)$",
+              "message": "useEffect must have dependency array"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "API Standards",
+      "description": "Enforce API endpoint standards",
+      "patterns": [
+        {
+          "files": ["**/api/**/*.{ts,js}"],
+          "requirePatterns": [
+            {
+              "pattern": "try\\s*{[\\s\\S]*}\\s*catch",
+              "message": "API endpoints must have error handling"
+            },
+            {
+              "pattern": "export\\s+async\\s+function",
+              "message": "API handlers should be async functions"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "State Management",
+      "description": "Enforce state management best practices",
+      "patterns": [
+        {
+          "files": ["**/store/**/*.{ts,tsx}"],
+          "requirePatterns": [
+            {
+              "pattern": "interface\\s+.*State",
+              "message": "Store must have State interface"
+            },
+            {
+              "pattern": "create<.*>\\(\\)",
+              "message": "Zustand stores must specify types"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Testing Standards",
+      "description": "Enforce testing best practices",
+      "patterns": [
+        {
+          "files": ["**/*.test.{ts,tsx}"],
+          "requirePatterns": [
+            {
+              "pattern": "describe\\('",
+              "message": "Tests must be grouped in describe blocks"
+            },
+            {
+              "pattern": "expect\\(",
+              "message": "Tests must include assertions"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Security Practices",
+      "description": "Enforce security best practices",
+      "patterns": [
+        {
+          "files": ["**/*.{ts,tsx,js,jsx}"],
+          "forbidPatterns": [
+            {
+              "pattern": "process\\.env\\.[^P]",
+              "message": "Use environment variables through config"
+            },
+            {
+              "pattern": "innerHTML",
+              "message": "Avoid using innerHTML to prevent XSS"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Focused Changes",
+      "description": "Enforce focused code changes that only affect relevant functionality",
+      "patterns": [
+        {
+          "files": ["**/*.{ts,tsx,js,jsx}"],
+          "forbidPatterns": [
+            {
+              "pattern": "(?<=git diff --staged).+(?<!\\b(feat|fix|refactor)\\b: .+)",
+              "message": "Changes should only affect the functionality being implemented"
+            }
+          ],
+          "requirePatterns": [
+            {
+              "pattern": "^\\s*\\/\\*\\*\\s*\\n\\s*\\*\\s*@description\\s+.*\\n\\s*\\*\\/",
+              "message": "Document the specific functionality being changed"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Terminal Commands Format",
+      "description": "Enforce terminal commands to be written one per line for better readability and execution",
+      "patterns": [
+        {
+          "files": ["**/*.{md,txt}"],
+          "forbidPatterns": [
+            {
+              "pattern": "```(?:bash|shell)\\s*\\n.*?;.*?```",
+              "message": "Terminal commands should be written one per line, not chained with semicolons"
+            },
+            {
+              "pattern": "```(?:bash|shell)\\s*\\n.*?&&.*?```",
+              "message": "Terminal commands should be written one per line, not chained with &&"
+            }
+          ],
+          "requirePatterns": [
+            {
+              "pattern": "```(?:bash|shell)\\s*\\n[^;&&\\n]+\\n```",
+              "message": "Each terminal command should be in its own code block"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "ignorePatterns": [
+    "node_modules/**",
+    "build/**",
+    "dist/**",
+    ".next/**",
+    "coverage/**"
+  ]
+} 
