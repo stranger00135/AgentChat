@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.1] - 2024-12-28
+
+### Changed
+- Improved API key state management using React Context
+- Separated client and server components in layout for better Next.js compatibility
+- Chat input is now enabled by default, with API key validation on send
+- Better error handling for invalid or missing API keys
+
+### Fixed
+- Fixed issue where chat input remained disabled after saving API key
+- Fixed build error related to metadata export in client components
+- Improved state synchronization between components
+
 ## [0.3.0] - 2024-12-28
 
 ### Added

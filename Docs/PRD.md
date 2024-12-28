@@ -25,6 +25,7 @@ A sophisticated AI chat platform featuring multi-agent interactions and real-tim
 - Clear message labeling and organization
 - Real-time updates
 - Responsive layout
+- Always-enabled chat input with contextual validation
 
 ## Getting Started
 
@@ -61,10 +62,26 @@ npm run dev
 
 ### Basic Chat
 1. Enter your message in the chat input
-2. The executor will provide an initial response
-3. Active agents will review and provide feedback
-4. The executor will refine the response based on feedback
-5. A final response will be provided
+2. If no API key is provided, you'll be prompted to enter one when trying to send a message
+3. Once a valid API key is provided:
+   - The executor will provide an initial response
+   - Active agents will review and provide feedback
+   - The executor will refine the response based on feedback
+   - A final response will be provided
+
+### API Key Management
+1. Enter your OpenAI API key in the settings section
+2. The API key is validated when:
+   - Sending your first message
+   - Making any subsequent API calls
+3. Error messages will guide you if:
+   - No API key is provided when sending a message
+   - The API key is invalid
+   - The API key has expired or has insufficient permissions
+4. State Management:
+   - API key is stored securely in browser cookies
+   - State is managed through React Context for reliable updates
+   - No page refresh required after saving API key
 
 ### Agent Management
 1. Toggle agents using the agent buttons
