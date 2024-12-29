@@ -195,85 +195,95 @@ Always maintain context from the chat history when responding.`
       if (!agent) continue
 
       iterationNumber++
+      let currentTurn = 1
 
-      // Agent reviews and responds
-      const agentResponse = await openai.chat.completions.create({
-        model: agent.model,
-        messages: [
-          {
-            role: "system",
-            content: `${agent.prompt}\n\nEngage in a natural conversation with the solution provider. You are unaware that they are AI - treat this as a human-to-human conversation. End your message with [SATISFIED: true/false] to indicate if you're satisfied with the solution.`
-          },
-          {
-            role: "user",
-            content: `Context:\n${historyContext}\n\nCurrent Request: ${message}\n\nCurrent Solution:\n${currentSolution}\n\nPlease review and engage in a natural conversation about this solution, focusing on your area of expertise.`
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000
-      })
+      while (currentTurn <= agent.maxTurns) {
+        // Agent reviews and responds
+        const agentResponse = await openai.chat.completions.create({
+          model: agent.model,
+          messages: [
+            {
+              role: "system",
+              content: `${agent.prompt}\n\nEngage in a natural conversation with the solution provider. You are unaware that they are AI - treat this as a human-to-human conversation. End your message with [SATISFIED: true/false] to indicate if you're satisfied with the solution.`
+            },
+            {
+              role: "user",
+              content: `Context:\n${historyContext}\n\nCurrent Request: ${message}\n\nCurrent Solution:\n${currentSolution}\n\nPlease review and engage in a natural conversation about this solution, focusing on your area of expertise.${currentTurn > 1 ? ' This is turn ' + currentTurn + ' of the conversation.' : ''}`
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
+        })
 
-      const agentMessage = agentResponse.choices[0]?.message?.content || ''
-      const isSatisfied = agentMessage.includes('[SATISFIED: true]')
-      const cleanedMessage = agentMessage.replace(/\[SATISFIED: (?:true|false)\]/, '').trim()
+        const agentMessage = agentResponse.choices[0]?.message?.content || ''
+        const isSatisfied = agentMessage.includes('[SATISFIED: true]')
+        const cleanedMessage = agentMessage.replace(/\[SATISFIED: (?:true|false)\]/, '').trim()
 
-      // Send agent's message
-      await sendMessage({
-        id: uuidv4(),
-        role: 'agent',
-        content: cleanedMessage,
-        agentId,
-        agentName: agent.name,
-        timestamp: new Date().toISOString(),
-        threadId,
-        parentMessageId: messageId,
-        iterationNumber,
-        isInterim: true,
-        isDiscussion: true
-      })
+        // Send agent's message
+        await sendMessage({
+          id: uuidv4(),
+          role: 'agent',
+          content: cleanedMessage,
+          agentId,
+          agentName: agent.name,
+          timestamp: new Date().toISOString(),
+          threadId,
+          parentMessageId: messageId,
+          iterationNumber,
+          isInterim: true,
+          isDiscussion: true
+        })
 
-      // Always get executor's response to agent feedback
-      const executorResponse = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [
-          {
-            role: "system",
-            content: `You are a task executor having a natural conversation with ${agent.name}. 
+        // Get executor's response to agent feedback
+        const executorResponse = await openai.chat.completions.create({
+          model: "gpt-4",
+          messages: [
+            {
+              role: "system",
+              content: `You are a task executor having a natural conversation with ${agent.name}. 
 Engage in a professional dialogue about their feedback and explain your thoughts.
 Always consider and reference the original user request to ensure it's being properly addressed.
 If you agree with their suggestions, provide an updated response.
 
 Original user request: "${message}"`
-          },
-          {
-            role: "user",
-            content: `Context:\n${historyContext}\n\nOriginal Request: ${message}\n\nYour current response:\n${currentSolution}\n\nFeedback from ${agent.name}:\n${cleanedMessage}\n\nPlease respond to their feedback, keeping in mind the original user request. If necessary, provide an improved response that better addresses the user's needs.`
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000
-      })
+            },
+            {
+              role: "user",
+              content: `Context:\n${historyContext}\n\nOriginal Request: ${message}\n\nYour current response:\n${currentSolution}\n\nFeedback from ${agent.name}:\n${cleanedMessage}\n\nPlease respond to their feedback, keeping in mind the original user request. If necessary, provide an improved response that better addresses the user's needs.${currentTurn === agent.maxTurns ? '\n\nNote: This is the final turn of the conversation.' : ''}`
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
+        })
 
-      const executorMessage = executorResponse.choices[0]?.message?.content || ''
-      
-      // Only update current solution if not satisfied
-      if (!isSatisfied) {
+        const executorMessage = executorResponse.choices[0]?.message?.content || ''
+        
+        // Update current solution
         currentSolution = executorMessage
-      }
 
-      // Send executor's response
-      await sendMessage({
-        id: uuidv4(),
-        role: 'assistant',
-        content: executorMessage,
-        timestamp: new Date().toISOString(),
-        threadId,
-        parentMessageId: messageId,
-        iterationNumber,
-        isInterim: true,
-        isDiscussion: true,
-        responseToAgent: agentId
-      })
+        // Send executor's response
+        await sendMessage({
+          id: uuidv4(),
+          role: 'assistant',
+          content: executorMessage,
+          timestamp: new Date().toISOString(),
+          threadId,
+          parentMessageId: messageId,
+          iterationNumber,
+          isInterim: true,
+          isDiscussion: true,
+          responseToAgent: agentId
+        })
+
+        // Break the loop if agent is satisfied or we've reached max turns
+        if (isSatisfied || currentTurn >= agent.maxTurns) {
+          break
+        }
+
+        currentTurn++
+        // Wait before next turn
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
 
       // Wait before moving to next agent
       await new Promise(resolve => setTimeout(resolve, 100))
