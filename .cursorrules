@@ -182,7 +182,7 @@
     },
     {
       "name": "Focused Changes",
-      "description": "Enforce focused code changes that only affect relevant functionality",
+      "description": "Enforce strictly focused code changes that only affect the specific functionality being worked on",
       "patterns": [
         {
           "files": ["**/*.{ts,tsx,js,jsx}"],
@@ -190,6 +190,10 @@
             {
               "pattern": "(?<=git diff --staged).+(?<!\\b(feat|fix|refactor)\\b: .+)",
               "message": "Changes should only affect the functionality being implemented"
+            },
+            {
+              "pattern": ".*(?<!\\b(feat|fix|refactor)\\b: .*)",
+              "message": "Only modify code directly related to the current task. Do not change unrelated functionality or UI elements."
             }
           ],
           "requirePatterns": [

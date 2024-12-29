@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ChatInput } from './ChatInput'
 import { MessageList } from './MessageList'
 import { AgentList } from './AgentList'
-import { useApiKey } from '@/app/hooks/useApiKey'
+import { useApiKey } from '@/app/contexts/ApiKeyContext'
 import { ApiKeyInput } from '../Settings/ApiKeyInput'
 import { useChatStore } from '@/app/store/chatStore'
 import { v4 as uuidv4 } from 'uuid'
@@ -16,7 +16,16 @@ export const ChatInterface = () => {
   const { addMessage, agents, activeAgents, messages } = useChatStore()
 
   const handleSendMessage = async (content: string) => {
-    if (!content.trim() || !apiKey) return
+    if (!content.trim()) return
+    
+    // Check API key only when sending
+    if (!apiKey) {
+      console.log('ChatInterface: No API key available when trying to send message')
+      setError('Please enter your OpenAI API key first')
+      return
+    }
+
+    console.log('ChatInterface: Sending message with API key:', apiKey ? '***exists***' : 'empty')
 
     // Display user message immediately
     const userMessageId = uuidv4()
@@ -32,6 +41,7 @@ export const ChatInterface = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({ 
           message: content,
@@ -45,21 +55,27 @@ export const ChatInterface = () => {
 
       if (!response.ok) {
         const errorData = await response.json()
+        if (response.status === 401) {
+          const errorMessage = errorData.error || 'Please enter a valid OpenAI API key'
+          setError(errorMessage)
+          addMessage(errorMessage, 'assistant', { isError: true })
+          return
+        }
         throw new Error(errorData.error || 'Failed to send message')
       }
 
-      const reader = response.body?.getReader()
-      if (!reader) {
-        throw new Error('Response body is not readable')
+      if (!response.body) {
+        throw new Error('Response body is empty')
       }
 
-      // Read the stream
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
 
-        // Parse the chunk
-        const chunk = new TextDecoder().decode(value)
+        const chunk = decoder.decode(value)
         const messages = chunk.split('\n').filter(Boolean)
 
         for (const messageStr of messages) {
@@ -67,7 +83,10 @@ export const ChatInterface = () => {
             const message = JSON.parse(messageStr)
             if (message.type === 'message') {
               const msg = message.data
-              
+              if (msg.isError) {
+                setError(msg.content)
+                continue
+              }
               if (msg.role === 'agent') {
                 addMessage(msg.content, msg.role, {
                   id: msg.id,
@@ -93,17 +112,15 @@ export const ChatInterface = () => {
             }
           } catch (e) {
             console.error('Error parsing message:', e)
+            setError('Error parsing response from server')
           }
         }
       }
     } catch (error) {
       console.error('Error sending message:', error)
-      setError(error instanceof Error ? error.message : 'Failed to send message')
-      addMessage(
-        'Sorry, there was an error processing your message. Please try again.',
-        'assistant',
-        { isError: true }
-      )
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send message'
+      setError(errorMessage)
+      addMessage(errorMessage, 'assistant', { isError: true })
     } finally {
       setIsLoading(false)
     }
@@ -114,29 +131,19 @@ export const ChatInterface = () => {
       <div className="p-4 border-b bg-white">
         <h1 className="text-2xl font-bold mb-2">AI Chat</h1>
         <ApiKeyInput />
-      </div>
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full flex">
-          <div className="w-64 p-4 border-r bg-gray-50">
-            <AgentList />
+        {error && (
+          <div className="mt-2 text-sm text-red-500">
+            {error}
           </div>
-          <div className="flex-1 flex flex-col">
-            <div className="flex-1 overflow-y-auto p-4">
-              <MessageList />
-            </div>
-            <div className="p-4 border-t bg-white">
-              <ChatInput 
-                onSendMessage={handleSendMessage} 
-                disabled={isLoading || !apiKey} 
-                placeholder={apiKey ? "Type a message..." : "Please enter your OpenAI API key first"}
-              />
-              {error && (
-                <div className="text-red-500 text-sm mt-2">{error}</div>
-              )}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
+      <AgentList />
+      <MessageList />
+      <ChatInput 
+        onSendMessage={handleSendMessage} 
+        disabled={isLoading}
+        placeholder="Type a message..."
+      />
     </div>
   )
 } 

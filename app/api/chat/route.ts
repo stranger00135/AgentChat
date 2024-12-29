@@ -7,13 +7,6 @@ export async function POST(request: Request) {
   try {
     const { message, messageId, apiKey, activeAgents, agents, chatHistory = [] } = await request.json()
     
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'API key is required' },
-        { status: 401 }
-      )
-    }
-
     if (!message) {
       return NextResponse.json(
         { error: 'Message is required' },
@@ -21,7 +14,17 @@ export async function POST(request: Request) {
       )
     }
 
+    if (!apiKey) {
+      console.error('No API key provided')
+      return NextResponse.json(
+        { error: 'API key is required' },
+        { status: 401 }
+      )
+    }
+
+    // Initialize OpenAI with just the API key
     const openai = new OpenAI({ apiKey })
+
     const encoder = new TextEncoder()
     const stream = new TransformStream()
     const streamWriter = stream.writable.getWriter()
@@ -55,6 +58,15 @@ export async function POST(request: Request) {
       activeAgents,
       agents,
       sendMessage
+    }).catch(async (error) => {
+      console.error('Process messages error:', error)
+      await sendMessage({
+        content: error.message || 'An error occurred while processing your message',
+        role: 'assistant',
+        id: uuidv4(),
+        timestamp: new Date().toISOString(),
+        isError: true
+      })
     }).finally(() => streamWriter.close())
 
     return new Response(stream.readable, {
@@ -65,9 +77,9 @@ export async function POST(request: Request) {
       },
     })
   } catch (error) {
-    console.error('Chat API error:', error)
+    console.error('Error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: error instanceof Error ? error.message : 'An error occurred' },
       { status: 500 }
     )
   }
