@@ -177,3 +177,16 @@ ChatInterface (Container)
 - Keep component state minimal
 - Implement proper loading states
 - Handle edge cases
+
+## Layout Specifications
+
+### Container Widths
+- Main container: max-w-6xl (72rem/1152px)
+- Occupies approximately 3/4 of the viewport width
+- Centered with mx-auto
+
+### Component Layouts
+- API Key inputs: Horizontal grid layout (2 columns)
+- Message list: Full width of container
+- Chat input: Full width of container
+- Agent list: Full width with horizontal scrolling for many agents

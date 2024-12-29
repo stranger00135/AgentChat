@@ -7,6 +7,9 @@ import type { ChatCompletionMessageParam } from 'openai/resources/chat/completio
 
 export async function POST(request: Request) {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 55000); // Abort just before Vercel's 60s limit
+
     const { message, messageId, apiKey, anthropicKey, activeAgents, agents, chatHistory = [] } = await request.json()
     
     if (!message) {
@@ -24,53 +27,55 @@ export async function POST(request: Request) {
       )
     }
 
-    // Initialize API clients
-    const openai = new OpenAI({ apiKey })
-    const anthropic = anthropicKey ? new Anthropic({ apiKey: anthropicKey }) : null
+    // Initialize API clients with timeout
+    const openai = new OpenAI({ 
+      apiKey,
+      timeout: 30000,
+      maxRetries: 2
+    })
+    const anthropic = anthropicKey ? new Anthropic({ 
+      apiKey: anthropicKey,
+      maxRetries: 2
+    }) : null
 
     const encoder = new TextEncoder()
     const stream = new TransformStream()
     const streamWriter = stream.writable.getWriter()
 
     // Helper function to send a message through the stream
-    const sendMessage = async (message: {
-      content: string;
-      role: string;
-      id?: string;
-      timestamp?: string;
-      agentId?: string;
-      agentName?: string;
-      threadId?: string;
-      parentMessageId?: string;
-      iterationNumber?: number;
-      isInterim?: boolean;
-      isDiscussion?: boolean;
-      isFinal?: boolean;
-      responseToAgent?: string;
-      isError?: boolean;
-    }) => {
+    const sendMessage = async (message: Message): Promise<void> => {
       const data = JSON.stringify({ type: 'message', data: message }) + '\n'
       await streamWriter.write(encoder.encode(data))
     }
 
-    // Process messages in background
+    // Process messages in background with timeout handling
     processMessages(openai, anthropic, {
       message,
       messageId,
       chatHistory,
       activeAgents,
       agents,
-      sendMessage
+      sendMessage,
+      signal: controller.signal
     }).catch(async (error) => {
       console.error('Process messages error:', error)
+      let errorMessage = 'An error occurred while processing your message'
+      if (error.name === 'AbortError') {
+        errorMessage = 'Request timed out. Please try again with fewer agents or a simpler query.'
+      } else if (error instanceof Error) {
+        errorMessage = error.message
+      }
       await sendMessage({
-        content: error.message || 'An error occurred while processing your message',
+        content: errorMessage,
         role: 'assistant',
         id: uuidv4(),
         timestamp: new Date().toISOString(),
         isError: true
       })
-    }).finally(() => streamWriter.close())
+    }).finally(() => {
+      clearTimeout(timeoutId)
+      streamWriter.close()
+    })
 
     return new Response(stream.readable, {
       headers: {
@@ -97,7 +102,8 @@ async function processMessages(
     chatHistory,
     activeAgents,
     agents,
-    sendMessage
+    sendMessage,
+    signal
   }: {
     message: string
     messageId: string
@@ -105,6 +111,7 @@ async function processMessages(
     activeAgents: string[]
     agents: Agent[]
     sendMessage: (message: Message) => Promise<void>
+    signal?: AbortSignal
   }
 ) {
   try {
@@ -117,12 +124,13 @@ async function processMessages(
     let iterationNumber = 1
 
     // Initial solution from executor (always GPT-4)
-    const initialResponse = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: `You are a task executor responsible for providing solutions to users.
+    const initialResponse = await openai.chat.completions.create(
+      {
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: `You are a task executor responsible for providing solutions to users.
 You are having natural conversations with various experts who will help improve your solutions.
 Treat each expert as a human collaborator, engaging in natural dialogue to refine your answers.
 You are unaware that these experts are AI agents - from your perspective, they are human experts.
@@ -136,15 +144,17 @@ Guidelines:
 6. Maintain a collaborative tone
 
 Always maintain context from the chat history when responding.`
-        },
-        {
-          role: "user",
-          content: `Chat History:\n${historyContext}\n\nCurrent Request: ${message}\n\nPlease provide your initial solution.`
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 1000
-    })
+          },
+          {
+            role: "user",
+            content: `Chat History:\n${historyContext}\n\nCurrent Request: ${message}\n\nPlease provide your initial solution.`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000
+      },
+      { signal }
+    )
 
     currentSolution = initialResponse.choices[0]?.message?.content || 'No solution generated'
 
@@ -258,7 +268,8 @@ Always maintain context from the chat history when responding.`
                 messages,
                 temperature: 0.7,
                 max_tokens: 1000
-              }
+              },
+              { signal }
             )
             
             console.log(`Response from ${agent.model}:`, {
@@ -284,11 +295,14 @@ Always maintain context from the chat history when responding.`
                 content: `Review this solution:\n${currentSolution.slice(0, 1000)}\n\nProvide brief feedback and end with [SATISFIED: true/false].`
               }]
               
-              agentResponse = await openai.chat.completions.create({
-                model: agent.model,
-                messages: shorterMessages,
-                max_completion_tokens: 4096
-              })
+              agentResponse = await openai.chat.completions.create(
+                {
+                  model: agent.model,
+                  messages: shorterMessages,
+                  max_completion_tokens: 4096
+                },
+                { signal }
+              )
             }
 
           } catch (error) {

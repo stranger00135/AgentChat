@@ -27,7 +27,7 @@ export const ApiKeyInput = () => {
   }
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="p-4 grid grid-cols-2 gap-4">
       <div>
         <h3 className="text-sm font-medium text-gray-700 mb-2">OpenAI API Key (Required)</h3>
         {!isEditingOpenAI && apiKey ? (
