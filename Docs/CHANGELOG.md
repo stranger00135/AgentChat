@@ -7,6 +7,13 @@
 - Fixed message format and response handling for Claude models
 - Improved error handling for Anthropic API calls
 
+### Added
+- O1 reasoning model support
+  - Added O1 and O1-mini models
+  - Implemented token limit handling
+  - Added automatic retry with shorter input
+  - Optimized prompt format for reasoning tasks
+
 ## [0.3.2] - 2024-12-29
 
 ### Added

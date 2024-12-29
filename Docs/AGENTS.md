@@ -52,9 +52,27 @@ Each agent is an expert focused on a specific aspect and can use any supported m
   - GPT-4 Turbo Previous (1106-preview)
   - GPT-3.5 Turbo
   - O1 (Reasoning model for complex tasks)
+    - Specialized for multi-step reasoning
+    - 128K context length
+    - Optimized for focused analysis
   - O1-Mini (Efficient reasoning model)
+    - Lighter version of O1
+    - Ideal for simpler reasoning tasks
+    - More efficient token usage
 - **Anthropic Models** (Fully Integrated):
   - Claude 3.5 Sonnet
+
+### Model Selection Guidelines
+- Use GPT-4 for the executor (main solution provider)
+- Choose O1 models for agents requiring complex reasoning:
+  - Code analysis
+  - Architecture review
+  - Performance optimization
+- Use O1-mini for simpler expert roles:
+  - Style checking
+  - Documentation review
+  - Basic code review
+- Select Claude for natural language heavy tasks
 
 ### 3. Natural Conversation Pipeline
 

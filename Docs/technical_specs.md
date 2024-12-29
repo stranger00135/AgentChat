@@ -101,6 +101,31 @@ ChatInterface (Container)
 - Manages conversation context
 - Supports O1 models with optimized parameters
 
+### O1 Model Integration
+- Specialized handling for O1 and O1-mini reasoning models
+- Limitations and workarounds:
+  - No support for temperature, top_p, presence_penalty, frequency_penalty
+  - No streaming support
+  - Token limit handling with automatic retry
+  - Combined system and user messages into single message
+  - Simplified prompt format for better reasoning
+- Implementation details:
+  ```typescript
+  // O1 model specific configuration
+  {
+    model: 'o1' | 'o1-mini',
+    messages: [{
+      role: 'user',
+      content: `${simplifiedPrompt}\n\n${focusedContent}`
+    }],
+    max_completion_tokens: 4096
+  }
+  ```
+- Truncation handling:
+  - Detects 'length' finish reason
+  - Retries with shortened input (1000 chars)
+  - Maintains essential context in retry
+
 ### Anthropic API Integration
 - Uses Anthropic SDK for Claude models
 - Proper message format handling

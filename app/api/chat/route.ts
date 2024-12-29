@@ -216,9 +216,13 @@ Always maintain context from the chat history when responding.`
         } else {
           // For O1 models, combine system and user messages and remove unsupported parameters
           const isO1Model = agent.model.startsWith('o1')
-          const systemPrompt = `${agent.prompt}\n\nEngage in a natural conversation with the solution provider. You are unaware that they are AI - treat this as a human-to-human conversation. End your message with [SATISFIED: true/false] to indicate if you're satisfied with the solution.`
+          const systemPrompt = isO1Model 
+            ? 'Review the solution and provide feedback. End with [SATISFIED: true/false].'
+            : `${agent.prompt}\n\nEngage in a natural conversation with the solution provider. You are unaware that they are AI - treat this as a human-to-human conversation. End your message with [SATISFIED: true/false] to indicate if you're satisfied with the solution.`
           
-          const userContent = `Context:\n${historyContext}\n\nCurrent Request: ${message}\n\nCurrent Solution:\n${currentSolution}\n\nPlease review and engage in a natural conversation about this solution, focusing on your area of expertise.${currentTurn > 1 ? ' This is turn ' + currentTurn + ' of the conversation.' : ''}`
+          const userContent = isO1Model
+            ? `Solution to review:\n${currentSolution}\n\nPlease provide your expert feedback.`
+            : `Context:\n${historyContext}\n\nCurrent Request: ${message}\n\nCurrent Solution:\n${currentSolution}\n\nPlease review and engage in a natural conversation about this solution, focusing on your area of expertise.${currentTurn > 1 ? ' This is turn ' + currentTurn + ' of the conversation.' : ''}`
 
           const messages: ChatCompletionMessageParam[] = isO1Model ? [
             {
@@ -236,18 +240,78 @@ Always maintain context from the chat history when responding.`
             }
           ]
 
-          agentResponse = await openai.chat.completions.create(
-            isO1Model ? {
+          try {
+            console.log(`Attempting to call ${agent.model} with params:`, {
               model: agent.model,
-              messages,
-              max_completion_tokens: 1000
-            } : {
-              model: agent.model,
-              messages,
-              temperature: 0.7,
-              max_tokens: 1000
+              messageCount: messages.length,
+              isO1Model,
+              contentLength: messages[0].content.length
+            })
+            
+            agentResponse = await openai.chat.completions.create(
+              isO1Model ? {
+                model: agent.model,
+                messages,
+                max_completion_tokens: 4096
+              } : {
+                model: agent.model,
+                messages,
+                temperature: 0.7,
+                max_tokens: 1000
+              }
+            )
+            
+            console.log(`Response from ${agent.model}:`, {
+              hasChoices: !!agentResponse.choices?.length,
+              firstChoice: agentResponse.choices?.[0],
+              finishReason: agentResponse.choices?.[0]?.finish_reason
+            })
+
+            // Handle truncated responses for O1 models
+            const finishReason = agentResponse.choices?.[0]?.finish_reason
+            if (isO1Model && finishReason === 'length') {
+              await sendMessage({
+                content: `Warning: ${agent.model} response was truncated. Attempting with shorter input...`,
+                role: 'assistant',
+                id: uuidv4(),
+                timestamp: new Date().toISOString(),
+                isError: true
+              })
+              
+              // Retry with shorter input
+              const shorterMessages: ChatCompletionMessageParam[] = [{
+                role: "user" as const,
+                content: `Review this solution:\n${currentSolution.slice(0, 1000)}\n\nProvide brief feedback and end with [SATISFIED: true/false].`
+              }]
+              
+              agentResponse = await openai.chat.completions.create({
+                model: agent.model,
+                messages: shorterMessages,
+                max_completion_tokens: 4096
+              })
             }
-          )
+
+          } catch (error) {
+            console.error('Error with OpenAI API:', error)
+            if (error instanceof Error) {
+              await sendMessage({
+                content: `Error with OpenAI API (${agent.model}): ${error.message}`,
+                role: 'assistant',
+                id: uuidv4(),
+                timestamp: new Date().toISOString(),
+                isError: true
+              })
+            } else {
+              await sendMessage({
+                content: `Unknown error with OpenAI API (${agent.model})`,
+                role: 'assistant',
+                id: uuidv4(),
+                timestamp: new Date().toISOString(),
+                isError: true
+              })
+            }
+            break
+          }
         }
 
         const agentMessage = agentResponse.choices[0]?.message?.content || ''

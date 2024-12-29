@@ -34,20 +34,30 @@ export function ApiKeyProvider({ children }: { children: React.ReactNode }) {
 
   const setApiKey = (key: string) => {
     if (key.trim()) {
-      Cookies.set(OPENAI_KEY_COOKIE, key.trim())
+      Cookies.set(OPENAI_KEY_COOKIE, key.trim(), {
+        expires: 7,
+        path: '/',
+        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production'
+      })
       setApiKeyState(key.trim())
     } else {
-      Cookies.remove(OPENAI_KEY_COOKIE)
+      Cookies.remove(OPENAI_KEY_COOKIE, { path: '/' })
       setApiKeyState('')
     }
   }
 
   const setAnthropicKey = (key: string) => {
     if (key.trim()) {
-      Cookies.set(ANTHROPIC_KEY_COOKIE, key.trim())
+      Cookies.set(ANTHROPIC_KEY_COOKIE, key.trim(), {
+        expires: 7,
+        path: '/',
+        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production'
+      })
       setAnthropicKeyState(key.trim())
     } else {
-      Cookies.remove(ANTHROPIC_KEY_COOKIE)
+      Cookies.remove(ANTHROPIC_KEY_COOKIE, { path: '/' })
       setAnthropicKeyState('')
     }
   }
