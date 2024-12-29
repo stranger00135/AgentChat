@@ -102,15 +102,21 @@ npm run dev
 
 ### Project Structure
 ```
-ai-chat-collab/
-├── app/
-│   ├── api/         # API routes
-│   ├── components/  # React components
-│   ├── store/       # State management
-│   ├── types/       # TypeScript types
-│   └── hooks/       # Custom hooks
-├── public/          # Static files
-└── docs/           # Documentation
+AgentChat/
+├── app/                    # Main application code
+│   ├── api/               # API routes for handling chat and data
+│   ├── components/        # React components
+│   │   ├── Chat/         # Chat-related components
+│   │   └── Settings/     # Settings and configuration components
+│   ├── hooks/            # Custom React hooks
+│   ├── store/            # State management (Zustand)
+│   ├── types/            # TypeScript type definitions
+│   └── utils/            # Utility functions
+├── Docs/                 # Project documentation
+│   ├── CHANGELOG.md      # Version history
+│   └── PRD.md           # Product Requirements Document
+├── public/              # Static assets
+└── package.json         # Project dependencies and scripts
 ```
 
 ### Key Technologies
