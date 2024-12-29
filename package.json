@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "vercel-build": "next lint && tsc && next build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.33.1",

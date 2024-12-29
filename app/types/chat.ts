@@ -14,18 +14,18 @@ export interface Agent {
 export interface Message {
   id: string
   content: string
-  role: Role
+  role: string
+  timestamp: string
   agentId?: string
   agentName?: string
-  timestamp: string
-  parentMessageId?: string    // Link messages in a conversation
-  threadId?: string          // Group related messages in a conversation thread
-  iterationNumber?: number   // Track iteration number in the conversation
-  isInterim?: boolean       // Whether this is part of interim discussion
-  isDiscussion?: boolean    // Whether this is a discussion message
-  isFinal?: boolean        // Whether this is the final response
-  responseToAgent?: string // Track which agent this response is for
-  isError?: boolean       // Whether this message represents an error
+  threadId?: string
+  parentMessageId?: string
+  iterationNumber?: number
+  isInterim?: boolean
+  isDiscussion?: boolean
+  isFinal?: boolean
+  responseToAgent?: string
+  isError?: boolean
 }
 
 export interface ConversationThread {

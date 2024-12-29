@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
-import { Agent } from '@/app/types/chat'
+import { Agent, Message } from '@/app/types/chat'
 import { v4 as uuidv4 } from 'uuid'
 import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 
@@ -101,10 +101,10 @@ async function processMessages(
   }: {
     message: string
     messageId: string
-    chatHistory: any[]
+    chatHistory: Message[]
     activeAgents: string[]
     agents: Agent[]
-    sendMessage: (message: any) => Promise<void>
+    sendMessage: (message: Message) => Promise<void>
   }
 ) {
   try {
@@ -245,7 +245,7 @@ Always maintain context from the chat history when responding.`
               model: agent.model,
               messageCount: messages.length,
               isO1Model,
-              contentLength: messages[0].content.length
+              contentLength: messages?.[0]?.content?.length ?? 0
             })
             
             agentResponse = await openai.chat.completions.create(
