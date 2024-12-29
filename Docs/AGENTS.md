@@ -31,18 +31,30 @@ interface Agent {
 
 #### Task Executor (Main AI)
 - Primary solution generator
+- Uses GPT-4 for consistent high-quality responses
 - Treats each agent as a human collaborator
 - Maintains natural conversation flow
 - Adapts responses based on dialogue
 - Unaware of artificial nature of agents
 
 #### Specialized Agents
-Each agent is an expert focused on a specific aspect:
+Each agent is an expert focused on a specific aspect and can use any supported model:
 - **Technical Expert**: Ensures technical accuracy and completeness
 - **UX Specialist**: Focuses on user experience and clarity
 - **Security Auditor**: Identifies security implications
 - **Performance Analyst**: Evaluates efficiency and scalability
 - **Documentation Expert**: Ensures comprehensive documentation
+
+#### Supported Models
+- **OpenAI Models**:
+  - GPT-4 (Default for executor)
+  - GPT-4 Turbo (0125-preview)
+  - GPT-4 Turbo Previous (1106-preview)
+  - GPT-3.5 Turbo
+  - O1 (Reasoning model for complex tasks)
+  - O1-Mini (Efficient reasoning model)
+- **Anthropic Models** (Fully Integrated):
+  - Claude 3.5 Sonnet
 
 ### 3. Natural Conversation Pipeline
 

@@ -9,7 +9,8 @@ A sophisticated AI chat platform featuring multi-agent interactions and real-tim
 - Natural conversation flow between agents and executor
 - Collapsible interim discussions
 - Custom agent creation and configuration
-- OpenAI API integration with seamless key management
+- OpenAI and Anthropic API integration with seamless key management
+- Support for both GPT-4 and Claude models
 - Always-enabled chat input with contextual validation
 
 ## Getting Started
@@ -18,6 +19,7 @@ A sophisticated AI chat platform featuring multi-agent interactions and real-tim
 - Node.js >= 18.17.0
 - npm >= 9.0.0
 - OpenAI API key
+- Anthropic API key (optional, for Claude models)
 
 ### Installation
 

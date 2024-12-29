@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.3.3] - 2024-12-29
+
+### Fixed
+- Anthropic Claude API integration now working correctly
+- Fixed message format and response handling for Claude models
+- Improved error handling for Anthropic API calls
+
+## [0.3.2] - 2024-12-29
+
+### Added
+- Anthropic API support with Claude 3 Sonnet model
+- Optional Anthropic API key configuration
+- New OpenAI model options:
+  - GPT-4 Turbo (0125-preview)
+  - GPT-4 Turbo Previous (1106-preview)
+
+### Changed
+- Updated model selection UI to include new models
+- Improved API key management to handle multiple providers
+- Enhanced agent conversation system to support both OpenAI and Anthropic models
+
+### Technical Improvements
+- Added Anthropic SDK integration
+- Implemented proper model-specific API calls
+- Fixed max turns handling in agent conversations
+
 ## [0.3.1] - 2024-12-29 (Reference Version)
 
 ### User Experience Improvements

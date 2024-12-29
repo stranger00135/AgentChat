@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import Anthropic from '@anthropic-ai/sdk'
 import { Agent } from '@/app/types/chat'
 import { v4 as uuidv4 } from 'uuid'
+import type { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 
 export async function POST(request: Request) {
   try {
-    const { message, messageId, apiKey, activeAgents, agents, chatHistory = [] } = await request.json()
+    const { message, messageId, apiKey, anthropicKey, activeAgents, agents, chatHistory = [] } = await request.json()
     
     if (!message) {
       return NextResponse.json(
@@ -15,15 +17,16 @@ export async function POST(request: Request) {
     }
 
     if (!apiKey) {
-      console.error('No API key provided')
+      console.error('No OpenAI API key provided')
       return NextResponse.json(
-        { error: 'API key is required' },
+        { error: 'OpenAI API key is required' },
         { status: 401 }
       )
     }
 
-    // Initialize OpenAI with just the API key
+    // Initialize API clients
     const openai = new OpenAI({ apiKey })
+    const anthropic = anthropicKey ? new Anthropic({ apiKey: anthropicKey }) : null
 
     const encoder = new TextEncoder()
     const stream = new TransformStream()
@@ -51,7 +54,7 @@ export async function POST(request: Request) {
     }
 
     // Process messages in background
-    processMessages(openai, {
+    processMessages(openai, anthropic, {
       message,
       messageId,
       chatHistory,
@@ -87,6 +90,7 @@ export async function POST(request: Request) {
 
 async function processMessages(
   openai: OpenAI,
+  anthropic: Anthropic | null,
   {
     message,
     messageId,
@@ -97,44 +101,13 @@ async function processMessages(
   }: {
     message: string
     messageId: string
-    chatHistory: {
-      content: string;
-      role: string;
-      id?: string;
-      timestamp?: string;
-      agentId?: string;
-      agentName?: string;
-      threadId?: string;
-      parentMessageId?: string;
-      iterationNumber?: number;
-      isInterim?: boolean;
-      isDiscussion?: boolean;
-      isFinal?: boolean;
-      responseToAgent?: string;
-      isError?: boolean;
-    }[]
+    chatHistory: any[]
     activeAgents: string[]
     agents: Agent[]
-    sendMessage: (message: {
-      content: string;
-      role: string;
-      id?: string;
-      timestamp?: string;
-      agentId?: string;
-      agentName?: string;
-      threadId?: string;
-      parentMessageId?: string;
-      iterationNumber?: number;
-      isInterim?: boolean;
-      isDiscussion?: boolean;
-      isFinal?: boolean;
-      responseToAgent?: string;
-      isError?: boolean;
-    }) => Promise<void>
+    sendMessage: (message: any) => Promise<void>
   }
 ) {
   try {
-    // Format chat history for context
     const historyContext = chatHistory
       .map(msg => `${msg.role}: ${msg.content}`)
       .join('\n')
@@ -143,7 +116,7 @@ async function processMessages(
     let currentSolution = ''
     let iterationNumber = 1
 
-    // Step 1: Get initial solution from executor
+    // Initial solution from executor (always GPT-4)
     const initialResponse = await openai.chat.completions.create({
       model: "gpt-4",
       messages: [
@@ -175,7 +148,6 @@ Always maintain context from the chat history when responding.`
 
     currentSolution = initialResponse.choices[0]?.message?.content || 'No solution generated'
 
-    // Send initial solution as interim message
     await sendMessage({
       id: uuidv4(),
       role: 'assistant',
@@ -189,7 +161,7 @@ Always maintain context from the chat history when responding.`
       isFinal: false
     })
 
-    // Step 2: Sequential conversations with each agent
+    // Process each agent
     for (const agentId of activeAgents) {
       const agent = agents.find(a => a.id === agentId)
       if (!agent) continue
@@ -198,28 +170,90 @@ Always maintain context from the chat history when responding.`
       let currentTurn = 1
 
       while (currentTurn <= agent.maxTurns) {
-        // Agent reviews and responds
-        const agentResponse = await openai.chat.completions.create({
-          model: agent.model,
-          messages: [
+        // Handle agent response based on model type
+        let agentResponse
+        if (agent.model.startsWith('claude') && anthropic) {
+          try {
+            const response = await anthropic.messages.create({
+              model: agent.model,
+              messages: [
+                {
+                  role: 'user',
+                  content: `Context:\n${historyContext}\n\nCurrent Request: ${message}\n\nCurrent Solution:\n${currentSolution}\n\nPlease review and engage in a natural conversation about this solution, focusing on your area of expertise.${currentTurn > 1 ? ' This is turn ' + currentTurn + ' of the conversation.' : ''}\n\nEnd your message with [SATISFIED: true/false] to indicate if you're satisfied with the solution.`
+                }
+              ],
+              system: agent.prompt,
+              max_tokens: 1000,
+              temperature: 0.7,
+              stream: false
+            })
+
+            // Extract content from the response
+            const content = response.content.reduce((acc, block) => {
+              if ('text' in block) {
+                return acc + block.text
+              }
+              return acc
+            }, '')
+            agentResponse = { choices: [{ message: { content } }] }
+          } catch (error) {
+            console.error('Error with Anthropic API:', error)
+            if (error instanceof Error) {
+              await sendMessage({
+                content: `Error with Anthropic API: ${error.message}`,
+                role: 'assistant',
+                id: uuidv4(),
+                timestamp: new Date().toISOString(),
+                isError: true
+              })
+            }
+            break
+          }
+        } else if (agent.model.startsWith('claude')) {
+          // Skip this agent if it requires Anthropic but no API key is provided
+          console.warn('Skipping Anthropic agent due to missing API key:', agent.name)
+          break
+        } else {
+          // For O1 models, combine system and user messages and remove unsupported parameters
+          const isO1Model = agent.model.startsWith('o1')
+          const systemPrompt = `${agent.prompt}\n\nEngage in a natural conversation with the solution provider. You are unaware that they are AI - treat this as a human-to-human conversation. End your message with [SATISFIED: true/false] to indicate if you're satisfied with the solution.`
+          
+          const userContent = `Context:\n${historyContext}\n\nCurrent Request: ${message}\n\nCurrent Solution:\n${currentSolution}\n\nPlease review and engage in a natural conversation about this solution, focusing on your area of expertise.${currentTurn > 1 ? ' This is turn ' + currentTurn + ' of the conversation.' : ''}`
+
+          const messages: ChatCompletionMessageParam[] = isO1Model ? [
+            {
+              role: "user",
+              content: `${systemPrompt}\n\n${userContent}`
+            }
+          ] : [
             {
               role: "system",
-              content: `${agent.prompt}\n\nEngage in a natural conversation with the solution provider. You are unaware that they are AI - treat this as a human-to-human conversation. End your message with [SATISFIED: true/false] to indicate if you're satisfied with the solution.`
+              content: systemPrompt
             },
             {
               role: "user",
-              content: `Context:\n${historyContext}\n\nCurrent Request: ${message}\n\nCurrent Solution:\n${currentSolution}\n\nPlease review and engage in a natural conversation about this solution, focusing on your area of expertise.${currentTurn > 1 ? ' This is turn ' + currentTurn + ' of the conversation.' : ''}`
+              content: userContent
             }
-          ],
-          temperature: 0.7,
-          max_tokens: 1000
-        })
+          ]
+
+          agentResponse = await openai.chat.completions.create(
+            isO1Model ? {
+              model: agent.model,
+              messages,
+              max_completion_tokens: 1000
+            } : {
+              model: agent.model,
+              messages,
+              temperature: 0.7,
+              max_tokens: 1000
+            }
+          )
+        }
 
         const agentMessage = agentResponse.choices[0]?.message?.content || ''
         const isSatisfied = agentMessage.includes('[SATISFIED: true]')
         const cleanedMessage = agentMessage.replace(/\[SATISFIED: (?:true|false)\]/, '').trim()
 
-        // Send agent's message
         await sendMessage({
           id: uuidv4(),
           role: 'agent',
@@ -234,7 +268,7 @@ Always maintain context from the chat history when responding.`
           isDiscussion: true
         })
 
-        // Get executor's response to agent feedback
+        // Executor response (always GPT-4)
         const executorResponse = await openai.chat.completions.create({
           model: "gpt-4",
           messages: [
@@ -257,11 +291,8 @@ Original user request: "${message}"`
         })
 
         const executorMessage = executorResponse.choices[0]?.message?.content || ''
-        
-        // Update current solution
         currentSolution = executorMessage
 
-        // Send executor's response
         await sendMessage({
           id: uuidv4(),
           role: 'assistant',
@@ -275,21 +306,17 @@ Original user request: "${message}"`
           responseToAgent: agentId
         })
 
-        // Break the loop if agent is satisfied or we've reached max turns
         if (isSatisfied || currentTurn >= agent.maxTurns) {
           break
         }
 
         currentTurn++
-        // Wait before next turn
         await new Promise(resolve => setTimeout(resolve, 100))
       }
 
-      // Wait before moving to next agent
       await new Promise(resolve => setTimeout(resolve, 100))
     }
 
-    // Send final solution
     await sendMessage({
       id: uuidv4(),
       role: 'assistant',

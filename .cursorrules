@@ -229,6 +229,35 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Terminal Command Testing",
+      "description": "Ensure adequate time is given for testing terminal commands",
+      "patterns": [
+        {
+          "files": ["**/*.{md,txt}"],
+          "requirePatterns": [
+            {
+              "pattern": "(?i)test.*wait.*(?:minute|min)",
+              "message": "When testing implementations, allow adequate time (at least 2 minutes) for observation and error collection"
+            },
+            {
+              "pattern": "(?i)composer.*direct",
+              "message": "Commands for testing in composer should be run directly, not in background"
+            }
+          ],
+          "forbidPatterns": [
+            {
+              "pattern": "(?i)immediate.*(?:terminate|kill|stop)",
+              "message": "Do not terminate test processes immediately without allowing time for error observation"
+            },
+            {
+              "pattern": "(?i)composer.*background",
+              "message": "Do not run composer test commands in background"
+            }
+          ]
+        }
+      ]
     }
   ],
   "ignorePatterns": [

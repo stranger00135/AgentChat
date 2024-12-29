@@ -1,51 +1,46 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import Cookies from 'js-cookie'
 
-const API_KEY_COOKIE = 'openai_api_key'
+const OPENAI_KEY_COOKIE = 'openai_api_key'
+const ANTHROPIC_KEY_COOKIE = 'anthropic_api_key'
 
 export const useApiKey = () => {
-  // Initialize state from cookie
-  const [apiKey, setApiKey] = useState<string>(() => {
-    const key = Cookies.get(API_KEY_COOKIE) || ''
-    console.log('useApiKey: Initial cookie value exists:', !!key)
-    return key
-  })
+  const [apiKey, setApiKeyState] = useState<string>('')
+  const [anthropicKey, setAnthropicKeyState] = useState<string>('')
 
-  const updateApiKey = useCallback((key: string) => {
-    const trimmedKey = key.trim()
-    console.log('useApiKey: updateApiKey called with value:', trimmedKey ? '***exists***' : 'empty')
-    
-    if (trimmedKey) {
-      console.log('useApiKey: Setting cookie and state')
-      // Update cookie first
-      Cookies.set(API_KEY_COOKIE, trimmedKey)
-      // Force immediate state update
-      Promise.resolve().then(() => {
-        console.log('useApiKey: Forcing immediate state update')
-        setApiKey(trimmedKey)
-      })
-    } else {
-      console.log('useApiKey: Removing cookie and clearing state')
-      Cookies.remove(API_KEY_COOKIE)
-      // Force immediate state update
-      Promise.resolve().then(() => {
-        console.log('useApiKey: Forcing immediate state update')
-        setApiKey('')
-      })
-    }
+  useEffect(() => {
+    const savedOpenAIKey = Cookies.get(OPENAI_KEY_COOKIE)
+    const savedAnthropicKey = Cookies.get(ANTHROPIC_KEY_COOKIE)
+    if (savedOpenAIKey) setApiKeyState(savedOpenAIKey)
+    if (savedAnthropicKey) setAnthropicKeyState(savedAnthropicKey)
   }, [])
 
-  // Debug: Log state changes
-  useEffect(() => {
-    console.log('useApiKey: State changed, new value exists:', !!apiKey)
-    const cookieValue = Cookies.get(API_KEY_COOKIE)
-    console.log('useApiKey: Current cookie value exists:', !!cookieValue)
-  }, [apiKey])
+  const setApiKey = (key: string) => {
+    const trimmedKey = key.trim()
+    setApiKeyState(trimmedKey)
+    if (trimmedKey) {
+      Cookies.set(OPENAI_KEY_COOKIE, trimmedKey, { expires: 7 })
+    } else {
+      Cookies.remove(OPENAI_KEY_COOKIE)
+    }
+  }
+
+  const setAnthropicKey = (key: string) => {
+    const trimmedKey = key.trim()
+    setAnthropicKeyState(trimmedKey)
+    if (trimmedKey) {
+      Cookies.set(ANTHROPIC_KEY_COOKIE, trimmedKey, { expires: 7 })
+    } else {
+      Cookies.remove(ANTHROPIC_KEY_COOKIE)
+    }
+  }
 
   return {
     apiKey,
-    updateApiKey
+    setApiKey,
+    anthropicKey,
+    setAnthropicKey
   }
 } 

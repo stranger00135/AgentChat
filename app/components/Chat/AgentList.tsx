@@ -4,6 +4,16 @@ import { useState } from 'react'
 import { useChatStore } from '@/app/store/chatStore'
 import { Agent } from '@/app/types/chat'
 
+const MODEL_OPTIONS = [
+  { value: 'gpt-4', label: 'GPT-4' },
+  { value: 'gpt-4-0125-preview', label: 'GPT-4 Turbo' },
+  { value: 'gpt-4-1106-preview', label: 'GPT-4 Turbo (Previous)' },
+  { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
+  { value: 'o1', label: 'O1 (Reasoning)' },
+  { value: 'o1-mini', label: 'O1 Mini (Reasoning)' },
+  { value: 'claude-3-5-sonnet-latest', label: 'Claude 3.5 Sonnet' },
+]
+
 export const AgentList = () => {
   const { agents, activeAgents, toggleAgent, addAgent, removeAgent } = useChatStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -140,8 +150,11 @@ export const AgentList = () => {
                     onChange={(e) => setNewAgent(prev => ({ ...prev, model: e.target.value }))}
                     className="w-full px-3 py-2 border rounded-md"
                   >
-                    <option value="gpt-4">GPT-4</option>
-                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                    {MODEL_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>

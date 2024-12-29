@@ -47,7 +47,11 @@ const useChatStore = create<ChatState>((set) => ({
 ```typescript
 // api/chat/route.ts
 export async function POST(req: Request) {
-  // Handle OpenAI API communication
+  // Handle OpenAI/Anthropic API communication
+  // Model-specific handling:
+  // - O1 models: Combine system/user messages, remove unsupported params
+  // - Claude models: Format messages according to Anthropic SDK specs
+  // - Standard models: Use full parameter set
   // Stream responses back to client
 }
 ```
@@ -95,6 +99,14 @@ ChatInterface (Container)
 - Streams responses for real-time updates
 - Handles multiple agent personalities
 - Manages conversation context
+- Supports O1 models with optimized parameters
+
+### Anthropic API Integration
+- Uses Anthropic SDK for Claude models
+- Proper message format handling
+- Specialized response processing
+- Efficient content extraction
+- Error handling with detailed feedback
 
 ### API Key Management
 - Secure storage in browser cookies

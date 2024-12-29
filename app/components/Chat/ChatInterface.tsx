@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from 'uuid'
 export const ChatInterface = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { apiKey } = useApiKey()
+  const { apiKey, anthropicKey } = useApiKey()
   const { addMessage, agents, activeAgents, messages } = useChatStore()
 
   const handleSendMessage = async (content: string) => {
@@ -47,6 +47,7 @@ export const ChatInterface = () => {
           message: content,
           messageId: userMessageId,
           apiKey,
+          anthropicKey,
           activeAgents,
           agents,
           chatHistory: messages.filter(m => !m.isInterim && !m.isDiscussion)
