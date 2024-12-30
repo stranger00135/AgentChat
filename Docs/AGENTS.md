@@ -76,20 +76,27 @@ Each agent is an expert focused on a specific aspect and can use any supported m
 
 ### 3. Natural Conversation Pipeline
 
+#### Turn-Based Conversation System
+- Each agent engages in multiple turns with the executor
+- Turn count tracked and displayed in messages
+- Natural progression through feedback cycles
+- Maximum turns configurable per agent (1-10)
+
 #### Flow Sequence
 1. **Initial Solution Phase**
    ```
    User Message → Task Executor → Initial Solution
    ```
 
-2. **Collaborative Refinement Phase**
+2. **Multi-Turn Refinement Phase**
    ```
    For each active agent:
    {
-     Agent reviews current solution
-     While (turns < maxTurns) {
-       Agent engages in natural dialogue with Executor
-       Executor refines solution based on conversation
+     currentTurn = 1
+     While (currentTurn <= maxTurns) {
+       Agent provides feedback for current turn
+       Executor refines solution based on feedback
+       currentTurn++
      }
    }
    ```
@@ -97,7 +104,23 @@ Each agent is an expert focused on a specific aspect and can use any supported m
 3. **Convergence Phase**
    ```
    Natural transition to next agent in pipeline
+   Final solution reflects all turn improvements
    ```
+
+#### Turn Progression Example
+```typescript
+// Turn 1
+Agent: Initial feedback on solution
+Executor: Addresses feedback, updates solution
+
+// Turn 2
+Agent: Deeper analysis of updated solution
+Executor: Further refinements based on new insights
+
+// Turn 3
+Agent: Final recommendations
+Executor: Incorporates final improvements
+```
 
 #### Real-time Visibility
 - Expandable conversation threads

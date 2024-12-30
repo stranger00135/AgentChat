@@ -93,6 +93,9 @@ export async function POST(request: Request) {
   }
 }
 
+/**
+ * @description Process messages with proper agent turn handling, ensuring agents complete their specified maxTurns
+ */
 async function processMessages(
   openai: OpenAI,
   anthropic: Anthropic | null,
@@ -179,6 +182,7 @@ Always maintain context from the chat history when responding.`
       iterationNumber++
       let currentTurn = 1
 
+      // Continue conversation until maxTurns is reached
       while (currentTurn <= agent.maxTurns) {
         // Handle agent response based on model type
         let agentResponse
@@ -189,7 +193,7 @@ Always maintain context from the chat history when responding.`
               messages: [
                 {
                   role: 'user',
-                  content: `Context:\n${historyContext}\n\nCurrent Request: ${message}\n\nCurrent Solution:\n${currentSolution}\n\nPlease review and engage in a natural conversation about this solution, focusing on your area of expertise.${currentTurn > 1 ? ' This is turn ' + currentTurn + ' of the conversation.' : ''}\n\nEnd your message with [SATISFIED: true/false] to indicate if you're satisfied with the solution.`
+                  content: `Context:\n${historyContext}\n\nCurrent Request: ${message}\n\nCurrent Solution:\n${currentSolution}\n\nPlease review and engage in a natural conversation about this solution, focusing on your area of expertise. This is turn ${currentTurn} of ${agent.maxTurns}.`
                 }
               ],
               system: agent.prompt,
@@ -227,12 +231,12 @@ Always maintain context from the chat history when responding.`
           // For O1 models, combine system and user messages and remove unsupported parameters
           const isO1Model = agent.model.startsWith('o1')
           const systemPrompt = isO1Model 
-            ? 'Review the solution and provide feedback. End with [SATISFIED: true/false].'
-            : `${agent.prompt}\n\nEngage in a natural conversation with the solution provider. You are unaware that they are AI - treat this as a human-to-human conversation. End your message with [SATISFIED: true/false] to indicate if you're satisfied with the solution.`
+            ? 'Review the solution and provide feedback.'
+            : `${agent.prompt}\n\nEngage in a natural conversation with the solution provider. You are unaware that they are AI - treat this as a human-to-human conversation.`
           
           const userContent = isO1Model
-            ? `Solution to review:\n${currentSolution}\n\nPlease provide your expert feedback.`
-            : `Context:\n${historyContext}\n\nCurrent Request: ${message}\n\nCurrent Solution:\n${currentSolution}\n\nPlease review and engage in a natural conversation about this solution, focusing on your area of expertise.${currentTurn > 1 ? ' This is turn ' + currentTurn + ' of the conversation.' : ''}`
+            ? `Solution to review:\n${currentSolution}\n\nPlease provide your expert feedback. This is turn ${currentTurn} of ${agent.maxTurns}.`
+            : `Context:\n${historyContext}\n\nCurrent Request: ${message}\n\nCurrent Solution:\n${currentSolution}\n\nPlease review and engage in a natural conversation about this solution, focusing on your area of expertise. This is turn ${currentTurn} of ${agent.maxTurns}.`
 
           const messages: ChatCompletionMessageParam[] = isO1Model ? [
             {
@@ -255,7 +259,9 @@ Always maintain context from the chat history when responding.`
               model: agent.model,
               messageCount: messages.length,
               isO1Model,
-              contentLength: messages?.[0]?.content?.length ?? 0
+              contentLength: messages?.[0]?.content?.length ?? 0,
+              currentTurn,
+              maxTurns: agent.maxTurns
             })
             
             agentResponse = await openai.chat.completions.create(
@@ -275,7 +281,9 @@ Always maintain context from the chat history when responding.`
             console.log(`Response from ${agent.model}:`, {
               hasChoices: !!agentResponse.choices?.length,
               firstChoice: agentResponse.choices?.[0],
-              finishReason: agentResponse.choices?.[0]?.finish_reason
+              finishReason: agentResponse.choices?.[0]?.finish_reason,
+              currentTurn,
+              maxTurns: agent.maxTurns
             })
 
             // Handle truncated responses for O1 models
@@ -292,7 +300,7 @@ Always maintain context from the chat history when responding.`
               // Retry with shorter input
               const shorterMessages: ChatCompletionMessageParam[] = [{
                 role: "user" as const,
-                content: `Review this solution:\n${currentSolution.slice(0, 1000)}\n\nProvide brief feedback and end with [SATISFIED: true/false].`
+                content: `Review this solution:\n${currentSolution.slice(0, 1000)}\n\nProvide brief feedback. This is turn ${currentTurn} of ${agent.maxTurns}.`
               }]
               
               agentResponse = await openai.chat.completions.create(
@@ -329,7 +337,6 @@ Always maintain context from the chat history when responding.`
         }
 
         const agentMessage = agentResponse.choices[0]?.message?.content || ''
-        const isSatisfied = agentMessage.includes('[SATISFIED: true]')
         const cleanedMessage = agentMessage.replace(/\[SATISFIED: (?:true|false)\]/, '').trim()
 
         await sendMessage({
@@ -343,7 +350,9 @@ Always maintain context from the chat history when responding.`
           parentMessageId: messageId,
           iterationNumber,
           isInterim: true,
-          isDiscussion: true
+          isDiscussion: true,
+          currentTurn,
+          maxTurns: agent.maxTurns
         })
 
         // Executor response (always GPT-4)
@@ -381,12 +390,10 @@ Original user request: "${message}"`
           iterationNumber,
           isInterim: true,
           isDiscussion: true,
-          responseToAgent: agentId
+          responseToAgent: agentId,
+          currentTurn,
+          maxTurns: agent.maxTurns
         })
-
-        if (isSatisfied || currentTurn >= agent.maxTurns) {
-          break
-        }
 
         currentTurn++
         await new Promise(resolve => setTimeout(resolve, 100))

@@ -190,3 +190,24 @@ ChatInterface (Container)
 - Message list: Full width of container
 - Chat input: Full width of container
 - Agent list: Full width with horizontal scrolling for many agents
+
+### Agent Turn Handling
+- Turn tracking system for multi-turn conversations
+  ```typescript
+  interface Message {
+    currentTurn?: number    // Current turn in conversation
+    maxTurns?: number      // Maximum turns allowed
+  }
+  ```
+- Turn progression:
+  1. Each agent starts with turn 1
+  2. Turns increment after each agent-executor exchange
+  3. Conversation continues until maxTurns is reached
+  4. Each turn includes agent feedback and executor response
+
+### Agent-Executor Conversation Flow
+1. Agent provides feedback (turn N)
+2. Executor responds and updates solution
+3. Turn counter increments
+4. Process repeats until maxTurns reached
+5. Final solution incorporates all turn improvements

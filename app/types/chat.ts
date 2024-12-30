@@ -11,6 +11,9 @@ export interface Agent {
   isActive: boolean   // Current state
 }
 
+/**
+ * @description Message interface for chat messages, including turn tracking for agent conversations
+ */
 export interface Message {
   id: string
   content: string
@@ -26,6 +29,8 @@ export interface Message {
   isFinal?: boolean
   responseToAgent?: string
   isError?: boolean
+  currentTurn?: number
+  maxTurns?: number
 }
 
 export interface ConversationThread {

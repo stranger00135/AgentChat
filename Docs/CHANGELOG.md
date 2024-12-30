@@ -6,6 +6,9 @@
 - Anthropic Claude API integration now working correctly
 - Fixed message format and response handling for Claude models
 - Improved error handling for Anthropic API calls
+- Fixed agent conversation turns not respecting maxTurns setting
+- Added proper turn tracking in agent-executor conversations
+- Improved conversation flow with better turn handling
 
 ### Added
 - O1 reasoning model support
@@ -13,6 +16,12 @@
   - Implemented token limit handling
   - Added automatic retry with shorter input
   - Optimized prompt format for reasoning tasks
+- Turn tracking in messages
+  - Added currentTurn and maxTurns tracking
+  - Enhanced logging for conversation debugging
+  - Added turn count display in agent messages
+  - Removed satisfaction check for natural turn progression
+  - Improved turn-based conversation flow
 
 ## [0.3.2] - 2024-12-29
 
